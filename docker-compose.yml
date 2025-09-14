@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: views-forecast-api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - USE_LOCAL_DATA=true
+      - DATA_PATH=/app/data/sample
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    networks:
+      - views-network
+
+networks:
+  views-network:
+    driver: bridge
