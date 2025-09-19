@@ -1,36 +1,73 @@
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
+from enum import Enum
+from typing import Optional, List
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import date
 
 
+class MetricName(str, Enum):
+    map = "map"
+    ci_50_low = "ci_50_low"
+    ci_50_high = "ci_50_high"
+    ci_90_low = "ci_90_low"
+    ci_90_high = "ci_90_high"
+    ci_99_low = "ci_99_low"
+    ci_99_high = "ci_99_high"
+    prob_0 = "prob_0"
+    prob_1 = "prob_1"
+    prob_10 = "prob_10"
+    prob_100 = "prob_100"
+    prob_1000 = "prob_1000"
+    prob_10000 = "prob_10000"
+
+
+ALL_METRIC_NAMES = tuple(metric.value for metric in MetricName)
+
+
 class ForecastMetrics(BaseModel):
-    map: float = Field(..., description="Most Accurate Prediction value", ge=0)
-    ci_50_low: float = Field(..., description="50% confidence interval lower bound", ge=0)
-    ci_50_high: float = Field(..., description="50% confidence interval upper bound", ge=0)
-    ci_90_low: float = Field(..., description="90% confidence interval lower bound", ge=0)
-    ci_90_high: float = Field(..., description="90% confidence interval upper bound", ge=0)
-    ci_99_low: float = Field(..., description="99% confidence interval lower bound", ge=0)
-    ci_99_high: float = Field(..., description="99% confidence interval upper bound", ge=0)
-    prob_0: float = Field(..., description="Probability of 0 fatalities", ge=0, le=1)
-    prob_1: float = Field(..., description="Probability of 1+ fatalities", ge=0, le=1)
-    prob_10: float = Field(..., description="Probability of 10+ fatalities", ge=0, le=1)
-    prob_100: float = Field(..., description="Probability of 100+ fatalities", ge=0, le=1)
-    prob_1000: float = Field(..., description="Probability of 1000+ fatalities", ge=0, le=1)
-    prob_10000: float = Field(..., description="Probability of 10000+ fatalities", ge=0, le=1)
+    """Complete or filtered set of available forecast metrics."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    map: Optional[float] = Field(None, description="Most Accurate Prediction value", ge=0)
+    ci_50_low: Optional[float] = Field(None, description="50% confidence interval lower bound", ge=0)
+    ci_50_high: Optional[float] = Field(None, description="50% confidence interval upper bound", ge=0)
+    ci_90_low: Optional[float] = Field(None, description="90% confidence interval lower bound", ge=0)
+    ci_90_high: Optional[float] = Field(None, description="90% confidence interval upper bound", ge=0)
+    ci_99_low: Optional[float] = Field(None, description="99% confidence interval lower bound", ge=0)
+    ci_99_high: Optional[float] = Field(None, description="99% confidence interval upper bound", ge=0)
+    prob_0: Optional[float] = Field(None, description="Probability of 0 fatalities", ge=0, le=1)
+    prob_1: Optional[float] = Field(None, description="Probability of 1+ fatalities", ge=0, le=1)
+    prob_10: Optional[float] = Field(None, description="Probability of 10+ fatalities", ge=0, le=1)
+    prob_100: Optional[float] = Field(None, description="Probability of 100+ fatalities", ge=0, le=1)
+    prob_1000: Optional[float] = Field(None, description="Probability of 1000+ fatalities", ge=0, le=1)
+    prob_10000: Optional[float] = Field(None, description="Probability of 10000+ fatalities", ge=0, le=1)
 
     @field_validator('ci_50_high', 'ci_90_high', 'ci_99_high')
     @classmethod
     def validate_ci_high(cls, v, info):
-        if 'ci_50_low' in info.data and info.field_name == 'ci_50_high':
-            if v < info.data['ci_50_low']:
-                raise ValueError('ci_50_high must be >= ci_50_low')
-        elif 'ci_90_low' in info.data and info.field_name == 'ci_90_high':
-            if v < info.data['ci_90_low']:
-                raise ValueError('ci_90_high must be >= ci_90_low')
-        elif 'ci_99_low' in info.data and info.field_name == 'ci_99_high':
-            if v < info.data['ci_99_low']:
-                raise ValueError('ci_99_high must be >= ci_99_low')
+        if v is None:
+            return v
+
+        low_field = {
+            'ci_50_high': 'ci_50_low',
+            'ci_90_high': 'ci_90_low',
+            'ci_99_high': 'ci_99_low'
+        }[info.field_name]
+        low_value = info.data.get(low_field)
+        if low_value is not None and v < low_value:
+            raise ValueError(f"{info.field_name} must be >= {low_field}")
         return v
+
+    @model_validator(mode="after")
+    def ensure_metrics_present(cls, values):  # type: ignore[override]
+        if not any(value is not None for value in values.__dict__.values()):
+            raise ValueError("At least one metric value must be provided")
+        return values
+
+    def model_dump(self, *args, **kwargs):  # type: ignore[override]
+        kwargs.setdefault("exclude_none", True)
+        return super().model_dump(*args, **kwargs)
 
 
 class GridCellForecast(BaseModel):
@@ -45,13 +82,16 @@ class GridCellForecast(BaseModel):
 
 
 class ForecastQuery(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
     country: Optional[str] = Field(None, description="Filter by country code (ISO 3166-1 alpha-3)")
     grid_ids: Optional[List[int]] = Field(None, description="Filter by specific grid cell IDs")
     months: Optional[List[str]] = Field(None, description="Filter by months (YYYY-MM format)")
     month_range: Optional[str] = Field(None, description="Month range in format YYYY-MM:YYYY-MM")
-    metrics: Optional[List[str]] = Field(
-        None, 
-        description="Specific metrics to return (if not specified, returns all)"
+    metrics: Optional[List[MetricName]] = Field(
+        None,
+        description="Specific metrics to return (if not specified, returns all)",
+        examples=[["map", "ci_90_low", "ci_90_high"]]
     )
     format: str = Field("json", description="Response format: json or ndjson")
     
@@ -89,17 +129,14 @@ class ForecastQuery(BaseModel):
     
     @field_validator('metrics')
     @classmethod
-    def validate_metrics(cls, v):
-        valid_metrics = {
-            'map', 'ci_50_low', 'ci_50_high', 'ci_90_low', 'ci_90_high',
-            'ci_99_low', 'ci_99_high', 'prob_0', 'prob_1', 'prob_10',
-            'prob_100', 'prob_1000', 'prob_10000'
-        }
-        if v:
-            invalid = set(v) - valid_metrics
-            if invalid:
-                raise ValueError(f"Invalid metrics: {invalid}")
-        return v
+    def deduplicate_metrics(cls, v):
+        if not v:
+            return v
+        unique: List[MetricName] = []
+        for metric in v:
+            if metric not in unique:
+                unique.append(metric)
+        return unique
 
 
 class GridCellMetadata(BaseModel):

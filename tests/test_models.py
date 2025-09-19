@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from app.models.forecast import ForecastMetrics, GridCellForecast, ForecastQuery
+from app.models.forecast import ForecastMetrics, GridCellForecast, ForecastQuery, MetricName
 
 
 def test_forecast_metrics_validation():
@@ -23,6 +23,14 @@ def test_forecast_metrics_validation():
     )
     assert metrics.map == 10.5
     assert metrics.ci_50_low < metrics.ci_50_high
+
+    # Valid when only a subset of metrics is provided
+    partial_metrics = ForecastMetrics(map=5.0, prob_1=0.25)
+    assert partial_metrics.model_dump() == {"map": 5.0, "prob_1": 0.25}
+
+    # Invalid: no metrics provided
+    with pytest.raises(ValidationError):
+        ForecastMetrics()
     
     # Invalid: CI high < CI low
     with pytest.raises(ValidationError):
@@ -96,10 +104,11 @@ def test_forecast_query_validation():
     query = ForecastQuery(
         country="UGA",
         months=["2024-01", "2024-02"],
-        metrics=["map", "ci_90_low", "ci_90_high"]
+        metrics=[MetricName.map, MetricName.ci_90_low, MetricName.ci_90_high]
     )
     assert query.country == "UGA"
     assert len(query.months) == 2
+    assert query.metrics == [MetricName.map.value, MetricName.ci_90_low.value, MetricName.ci_90_high.value]
     
     # Test country code validation
     query = ForecastQuery(country="uga")
@@ -120,3 +129,7 @@ def test_forecast_query_validation():
     # Invalid metrics
     with pytest.raises(ValidationError):
         ForecastQuery(metrics=["invalid_metric"])
+
+    # Duplicate metrics are removed while preserving order
+    query = ForecastQuery(metrics=["map", "map", "prob_1"])
+    assert query.metrics == ["map", "prob_1"]

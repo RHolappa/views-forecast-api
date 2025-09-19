@@ -1,8 +1,12 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.api.dependencies import verify_api_key
 
 client = TestClient(app)
+
+# Bypass API key checks during tests
+app.dependency_overrides[verify_api_key] = lambda: True
 
 
 def test_health_check():
@@ -166,4 +170,4 @@ def test_invalid_month_range():
 def test_invalid_metrics():
     """Test validation of invalid metrics"""
     response = client.get("/api/v1/forecasts?metrics=invalid_metric")
-    assert response.status_code == 400
+    assert response.status_code == 422

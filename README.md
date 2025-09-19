@@ -2,6 +2,9 @@
 
 A high-performance REST API for serving grid-level conflict predictions with uncertainty quantification. Built with FastAPI and designed for scalability.
 
+Made by: 
+
+
 ## Features
 
 - **Grid-cell level forecasts** with 13 prediction metrics including:
@@ -228,40 +231,6 @@ docker-compose up -d
 - Use HTTPS in production (terminate TLS at load balancer)
 - Regularly update dependencies
 
-## API Response Examples
-
-### Forecast Response
-```json
-{
-  "data": [
-    {
-      "grid_id": 1,
-      "latitude": 0.5,
-      "longitude": 32.5,
-      "country_id": "UGA",
-      "month": "2024-01",
-      "metrics": {
-        "map": 10.5,
-        "ci_90_low": 4.0,
-        "ci_90_high": 20.0
-      }
-    }
-  ],
-  "count": 1,
-  "query": {
-    "country": "UGA",
-    "months": ["2024-01"],
-    "metrics": ["map", "ci_90_low", "ci_90_high"]
-  }
-}
-```
-
-### NDJSON Streaming Format
-```json
-{"grid_id":1,"latitude":0.5,"longitude":32.5,"country_id":"UGA","month":"2024-01","metrics":{...}}
-{"grid_id":2,"latitude":1.5,"longitude":33.5,"country_id":"UGA","month":"2024-01","metrics":{...}}
-```
-
 ## Future Enhancements
 
 The API is designed to easily support:
@@ -274,8 +243,23 @@ The API is designed to easily support:
 
 ## License
 
-[Your License Here]
+This project is free to use for educational purposes.
 
 ## Support
 
 For issues and questions, please open an issue in the repository.
+
+## Authors
+
+views-forecast-api / rauha.api is developed for the **VIEWS Challenge: Turning Conflict Forecasts into Accessible APIs** at **JunctionX Oulu 2025**.
+
+Developed by:
+- **Risto Holappa** - [GitHub](https://github.com/RHolappa)
+- **Sillah Babar** - [GitHub](https://github.com/Sillah-Babar)
+
+### Event
+[JunctionX Oulu 2025](https://eu.junctionplatform.com/)
+
+---
+
+*This project was created as part of the VIEWS Challenge hackathon, focusing on making conflict forecasting data more accessible through API development.*

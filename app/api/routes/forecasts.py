@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional
 from fastapi import APIRouter, Query, Depends, HTTPException, Response
 from fastapi.responses import StreamingResponse
-from app.models.forecast import ForecastQuery
+from app.models.forecast import ForecastQuery, MetricName
 from app.models.responses import ForecastResponse, ErrorResponse
 from app.services.forecast_service import forecast_service
 from app.api.dependencies import verify_api_key
@@ -19,7 +19,10 @@ async def get_forecasts(
     grid_ids: Optional[List[int]] = Query(None, description="Filter by grid cell IDs"),
     months: Optional[List[str]] = Query(None, description="Filter by months (YYYY-MM format)"),
     month_range: Optional[str] = Query(None, description="Month range (YYYY-MM:YYYY-MM)"),
-    metrics: Optional[List[str]] = Query(None, description="Specific metrics to return"),
+    metrics: Optional[List[MetricName]] = Query(
+        None,
+        description="Specific metrics to return (defaults to all metrics)",
+    ),
     format: str = Query("json", description="Response format: json or ndjson"),
     _: bool = Depends(verify_api_key)
 ):
@@ -32,7 +35,7 @@ async def get_forecasts(
     - **grid_ids**: List of grid cell IDs (can be repeated: ?grid_ids=1&grid_ids=2)
     - **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)
     - **month_range**: Range of months (e.g., "2024-01:2024-06")
-    - **metrics**: Specific metrics to include (if not specified, returns all)
+    - **metrics**: Specific metrics to include (if not specified, returns all 13 metrics)
     - **format**: Response format ("json" or "ndjson" for streaming)
     
     ## Available Metrics

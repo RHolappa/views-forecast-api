@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional, Dict, Any
-from datetime import datetime, date
-from app.models.forecast import ForecastQuery, GridCellForecast
+from datetime import datetime
+from app.models.forecast import ForecastQuery, GridCellForecast, MetricName
 from app.services.data_loader import data_loader
 
 logger = logging.getLogger(__name__)
@@ -49,11 +49,15 @@ class ForecastService:
                 months_filter = range_months
         
         # Get forecasts from data loader
+        metrics_filter = None
+        if query.metrics:
+            metrics_filter = [MetricName(metric) if not isinstance(metric, MetricName) else metric for metric in query.metrics]
+
         forecasts = self.data_loader.get_forecasts(
             country=query.country,
             grid_ids=query.grid_ids,
             months=months_filter,
-            metrics=query.metrics
+            metrics=metrics_filter
         )
         
         logger.info(f"Retrieved {len(forecasts)} forecasts")
@@ -101,7 +105,7 @@ class ForecastService:
             }
         }
     
-    def filter_metrics(self, forecast: GridCellForecast, metrics: List[str]) -> Dict[str, Any]:
+    def filter_metrics(self, forecast: GridCellForecast, metrics: List[MetricName | str]) -> Dict[str, Any]:
         """Filter forecast to include only requested metrics"""
         result = {
             "grid_id": forecast.grid_id,
@@ -118,7 +122,8 @@ class ForecastService:
         
         # Add only requested metrics
         metrics_dict = forecast.metrics.model_dump()
-        result["metrics"] = {k: v for k, v in metrics_dict.items() if k in metrics}
+        allowed = {metric.value if isinstance(metric, MetricName) else metric for metric in metrics}
+        result["metrics"] = {k: v for k, v in metrics_dict.items() if k in allowed}
         
         return result
 

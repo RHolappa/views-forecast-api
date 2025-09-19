@@ -6,7 +6,12 @@ import pandas as pd
 import pyarrow.parquet as pq
 from cachetools import TTLCache
 from app.core.config import settings
-from app.models.forecast import GridCellForecast, ForecastMetrics
+from app.models.forecast import (
+    GridCellForecast,
+    ForecastMetrics,
+    MetricName,
+    ALL_METRIC_NAMES,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +144,7 @@ class DataLoader:
         country: Optional[str] = None,
         grid_ids: Optional[List[int]] = None,
         months: Optional[List[str]] = None,
-        metrics: Optional[List[str]] = None
+        metrics: Optional[List[MetricName]] = None
     ) -> List[GridCellForecast]:
         """Get forecasts with optional filters"""
         df = self._load_data()
@@ -158,28 +163,15 @@ class DataLoader:
         forecasts = []
         for _, row in df.iterrows():
             forecast_dict = row.to_dict()
-            
+
             # Extract metrics
+            selected_metrics = [metric.value for metric in metrics] if metrics else ALL_METRIC_NAMES
             metrics_data = {
-                'map': forecast_dict['map'],
-                'ci_50_low': forecast_dict['ci_50_low'],
-                'ci_50_high': forecast_dict['ci_50_high'],
-                'ci_90_low': forecast_dict['ci_90_low'],
-                'ci_90_high': forecast_dict['ci_90_high'],
-                'ci_99_low': forecast_dict['ci_99_low'],
-                'ci_99_high': forecast_dict['ci_99_high'],
-                'prob_0': forecast_dict['prob_0'],
-                'prob_1': forecast_dict['prob_1'],
-                'prob_10': forecast_dict['prob_10'],
-                'prob_100': forecast_dict['prob_100'],
-                'prob_1000': forecast_dict['prob_1000'],
-                'prob_10000': forecast_dict['prob_10000'],
+                name: forecast_dict[name]
+                for name in selected_metrics
+                if name in forecast_dict
             }
-            
-            # Filter metrics if requested
-            if metrics:
-                metrics_data = {k: v for k, v in metrics_data.items() if k in metrics}
-            
+
             forecast = GridCellForecast(
                 grid_id=int(forecast_dict['grid_id']),
                 latitude=float(forecast_dict['latitude']),

@@ -1,6 +1,6 @@
 import pytest
 from app.services.forecast_service import ForecastService
-from app.models.forecast import ForecastQuery
+from app.models.forecast import ForecastQuery, MetricName
 
 
 def test_parse_month_range():
@@ -48,6 +48,12 @@ def test_get_forecasts():
     forecasts = service.get_forecasts(query)
     for forecast in forecasts:
         assert forecast.month in ["2024-01", "2024-02"]
+
+    # Test with metric filter
+    query = ForecastQuery(metrics=[MetricName.map, MetricName.prob_10])
+    forecasts = service.get_forecasts(query)
+    for forecast in forecasts:
+        assert set(forecast.metrics.model_dump().keys()) == {"map", "prob_10"}
 
 
 def test_get_forecast_summary():
