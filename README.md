@@ -2,9 +2,6 @@
 
 A high-performance REST API for serving grid-level conflict predictions with uncertainty quantification. Built with FastAPI and designed for scalability.
 
-Made by: 
-
-
 ## Features
 
 - **Grid-cell level forecasts** with 13 prediction metrics including:
@@ -27,7 +24,7 @@ Made by:
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/rholappa/views-forecast-api
 cd views-forecast-api
 ```
 
