@@ -1,0 +1,23 @@
+meta {
+  name: Mexico Aug 2025
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8000/api/v1/forecasts?country=MEX&months=2025-08&metrics=map&metrics=ci_90_low&metrics=ci_90_high
+  body: none
+  auth: inherit
+}
+
+params:query {
+  country: MEX
+  months: 2025-08
+  metrics: map
+  metrics: ci_90_low
+  metrics: ci_90_high
+}
+
+settings {
+  encodeUrl: true
+}

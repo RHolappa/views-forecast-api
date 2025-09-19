@@ -54,6 +54,8 @@ Once running, visit:
 - **Interactive API docs**: http://localhost:8000/docs
 - **OpenAPI schema**: http://localhost:8000/openapi.json
 
+(X-API-Key header from env file can be used)
+
 ### Key Endpoints
 
 #### Get Forecasts
