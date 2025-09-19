@@ -1,9 +1,11 @@
+from typing import Optional
+
 from fastapi import Header, HTTPException, status
 
 from app.core.config import settings
 
 
-async def verify_api_key(x_api_key: str | None = Header(None)) -> bool:
+async def verify_api_key(x_api_key: Optional[str] = Header(None)) -> bool:
     """Verify API key if configured"""
     if not settings.api_key:
         # No API key configured, allow access
