@@ -144,6 +144,40 @@ make lint    # Run linting
 make format  # Auto-format code
 ```
 
+## Working with Official VIEWS Forecast Drops
+
+1. **Download the raw files** – grab the PRIO-GRID CSV (`fatalities*_pgm.csv`), the country-month CSV (`fatalities*_cm.csv`), and the forecast parquet pair (`preds_001*.parquet`). Drop them under `data/views_raw/<year>/<month>/` and `data/views_parquet/<year>/<month>/` respectively.
+2. **Generate the API parquet** – convert the raw files into the schema expected by the service:
+   ```bash
+   venv/bin/python scripts/prepare_views_forecasts.py \
+     --pgm-csv data/views_raw/2025/07/fatalities002_2025_07_t01_pgm.csv \
+     --cm-csv  data/views_raw/2025/07/fatalities002_2025_07_t01_cm.csv \
+     --preds-parquet "data/views_parquet/2025/07/preds_001 (1).parquet" \
+     --hdi-parquet data/views_parquet/2025/07/preds_001_90_hdi.parquet \
+     --output data/views_parquet/2025/07/api_ready/forecasts.parquet \
+     --overwrite
+   ```
+3. **Point the API at the converted data** – copy `.env.example` to `.env` (if you haven’t already) and set:
+   ```env
+   USE_LOCAL_DATA=true
+   DATA_PATH=data/views_parquet/2025/07/api_ready
+   API_KEY=your-local-api-key
+   ```
+   Restart `make dev` after any change so the loader drops its cache.
+4. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
+   ```bash
+   curl -H "X-API-Key: your-local-api-key" \
+        "http://localhost:8000/api/v1/forecasts?country=MEX&months=2025-08"
+   ```
+   The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
+5. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
+   ```bash
+   venv/bin/python - <<'PY'
+   from app.services.data_loader import data_loader
+   data_loader.cache.clear()
+   PY
+   ```
+
 ### Project Structure
 ```
 views-forecast-api/
