@@ -1,8 +1,8 @@
+from datetime import date
 from enum import Enum
-from typing import Optional, List
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from datetime import date
 
 
 class MetricName(str, Enum):
@@ -30,29 +30,47 @@ class ForecastMetrics(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     map: Optional[float] = Field(None, description="Most Accurate Prediction value", ge=0)
-    ci_50_low: Optional[float] = Field(None, description="50% confidence interval lower bound", ge=0)
-    ci_50_high: Optional[float] = Field(None, description="50% confidence interval upper bound", ge=0)
-    ci_90_low: Optional[float] = Field(None, description="90% confidence interval lower bound", ge=0)
-    ci_90_high: Optional[float] = Field(None, description="90% confidence interval upper bound", ge=0)
-    ci_99_low: Optional[float] = Field(None, description="99% confidence interval lower bound", ge=0)
-    ci_99_high: Optional[float] = Field(None, description="99% confidence interval upper bound", ge=0)
+    ci_50_low: Optional[float] = Field(
+        None, description="50% confidence interval lower bound", ge=0
+    )
+    ci_50_high: Optional[float] = Field(
+        None, description="50% confidence interval upper bound", ge=0
+    )
+    ci_90_low: Optional[float] = Field(
+        None, description="90% confidence interval lower bound", ge=0
+    )
+    ci_90_high: Optional[float] = Field(
+        None, description="90% confidence interval upper bound", ge=0
+    )
+    ci_99_low: Optional[float] = Field(
+        None, description="99% confidence interval lower bound", ge=0
+    )
+    ci_99_high: Optional[float] = Field(
+        None, description="99% confidence interval upper bound", ge=0
+    )
     prob_0: Optional[float] = Field(None, description="Probability of 0 fatalities", ge=0, le=1)
     prob_1: Optional[float] = Field(None, description="Probability of 1+ fatalities", ge=0, le=1)
     prob_10: Optional[float] = Field(None, description="Probability of 10+ fatalities", ge=0, le=1)
-    prob_100: Optional[float] = Field(None, description="Probability of 100+ fatalities", ge=0, le=1)
-    prob_1000: Optional[float] = Field(None, description="Probability of 1000+ fatalities", ge=0, le=1)
-    prob_10000: Optional[float] = Field(None, description="Probability of 10000+ fatalities", ge=0, le=1)
+    prob_100: Optional[float] = Field(
+        None, description="Probability of 100+ fatalities", ge=0, le=1
+    )
+    prob_1000: Optional[float] = Field(
+        None, description="Probability of 1000+ fatalities", ge=0, le=1
+    )
+    prob_10000: Optional[float] = Field(
+        None, description="Probability of 10000+ fatalities", ge=0, le=1
+    )
 
-    @field_validator('ci_50_high', 'ci_90_high', 'ci_99_high')
+    @field_validator("ci_50_high", "ci_90_high", "ci_99_high")
     @classmethod
     def validate_ci_high(cls, v, info):
         if v is None:
             return v
 
         low_field = {
-            'ci_50_high': 'ci_50_low',
-            'ci_90_high': 'ci_90_low',
-            'ci_99_high': 'ci_99_low'
+            "ci_50_high": "ci_50_low",
+            "ci_90_high": "ci_90_low",
+            "ci_99_high": "ci_99_low",
         }[info.field_name]
         low_value = info.data.get(low_field)
         if low_value is not None and v < low_value:
@@ -91,43 +109,43 @@ class ForecastQuery(BaseModel):
     metrics: Optional[List[MetricName]] = Field(
         None,
         description="Specific metrics to return (if not specified, returns all)",
-        examples=[["map", "ci_90_low", "ci_90_high"]]
+        examples=[["map", "ci_90_low", "ci_90_high"]],
     )
     format: str = Field("json", description="Response format: json or ndjson")
-    
-    @field_validator('country')
+
+    @field_validator("country")
     @classmethod
     def validate_country(cls, v):
         if v and len(v) != 3:
-            raise ValueError('Country code must be ISO 3166-1 alpha-3 (3 characters)')
+            raise ValueError("Country code must be ISO 3166-1 alpha-3 (3 characters)")
         return v.upper() if v else v
-    
-    @field_validator('months')
+
+    @field_validator("months")
     @classmethod
     def validate_months(cls, v):
         if v:
             for month in v:
                 try:
                     date.fromisoformat(f"{month}-01")
-                except ValueError:
-                    raise ValueError(f"Invalid month format: {month}. Use YYYY-MM")
+                except ValueError as e:
+                    raise ValueError(f"Invalid month format: {month}. Use YYYY-MM") from e
         return v
-    
-    @field_validator('month_range')
+
+    @field_validator("month_range")
     @classmethod
     def validate_month_range(cls, v):
         if v:
-            parts = v.split(':')
+            parts = v.split(":")
             if len(parts) != 2:
                 raise ValueError("Month range must be in format YYYY-MM:YYYY-MM")
             for part in parts:
                 try:
                     date.fromisoformat(f"{part}-01")
-                except ValueError:
-                    raise ValueError(f"Invalid month format in range: {part}")
+                except ValueError as e:
+                    raise ValueError(f"Invalid month format in range: {part}") from e
         return v
-    
-    @field_validator('metrics')
+
+    @field_validator("metrics")
     @classmethod
     def deduplicate_metrics(cls, v):
         if not v:

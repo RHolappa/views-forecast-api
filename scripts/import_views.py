@@ -57,7 +57,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "CSV with PRIO-GRID metadata (pg_id, latitude, longitude, country_id, '
+            "CSV with PRIO-GRID metadata (pg_id, latitude, longitude, country_id, "
             "optional admin levels). Required for pgm conversion."
         ),
     )
@@ -145,8 +145,7 @@ def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "PRIO-GRID lookup must contain columns %s; missing %s"
-            % (sorted(required), sorted(missing))
+            f"PRIO-GRID lookup must contain columns {sorted(required)}; missing {sorted(missing)}"
         )
 
     subset_cols = ["grid_id", "latitude", "longitude", "country_id"]
@@ -179,8 +178,7 @@ def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "Country centroids CSV must include %s; missing %s"
-            % (sorted(required), sorted(missing))
+            f"Country centroids CSV must include {sorted(required)}; missing {sorted(missing)}"
         )
     return df[["country_id", "latitude", "longitude"]]
 
@@ -266,8 +264,7 @@ def convert_priogrid(
     if df[["latitude", "longitude"]].isna().any().any():
         missing = df.loc[df["latitude"].isna(), "grid_id"].unique()
         raise ValueError(
-            "Latitude/longitude missing for %d grid cells. Check the PRIO-GRID lookup."
-            % len(missing)
+            f"Latitude/longitude missing for {len(missing)} grid cells. Check the PRIO-GRID lookup."
         )
 
     df = ensure_metric_columns(df)
@@ -315,14 +312,12 @@ def convert_country_month(
     if df[["latitude", "longitude"]].isna().any().any():
         missing = df.loc[df["latitude"].isna(), "country_id"].unique()
         raise ValueError(
-            "Centroid lookup missing latitude/longitude for countries %s" % sorted(missing)
+            f"Centroid lookup missing latitude/longitude for countries {sorted(missing)}"
         )
 
     # Create synthetic grid ids so rows can co-exist with PRIO-GRID cells
     df = df.sort_values(["country_id", "month"])
-    df["grid_id"] = (
-        df["country_id"].astype("category").cat.codes.astype(int) + 10_000_000
-    )
+    df["grid_id"] = df["country_id"].astype("category").cat.codes.astype(int) + 10_000_000
 
     df["admin_1_id"] = None
     df["admin_2_id"] = None

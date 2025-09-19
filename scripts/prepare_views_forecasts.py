@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -78,14 +78,12 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_month_and_country_lookups(cm_csv: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def build_month_and_country_lookups(cm_csv: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.read_csv(cm_csv, usecols=["month_id", "year", "month", "gwcode", "isoab"])
 
-    month_df = (
-        df.drop_duplicates("month_id")
-        .assign(month=lambda d: d["year"].astype(str) + "-" + d["month"].astype(str).str.zfill(2))
-        [["month_id", "month"]]
-    )
+    month_df = df.drop_duplicates("month_id").assign(
+        month=lambda d: d["year"].astype(str) + "-" + d["month"].astype(str).str.zfill(2)
+    )[["month_id", "month"]]
 
     country_df = df.drop_duplicates("gwcode")[["gwcode", "isoab"]]
     country_df["gwcode"] = country_df["gwcode"].astype(int)
@@ -173,7 +171,7 @@ def main() -> None:
     if df["latitude"].isna().any() or df["longitude"].isna().any():
         missing_cells = df.loc[df["latitude"].isna(), "grid_id"].unique()
         raise ValueError(
-            "Latitude/longitude missing for grid cell(s): %s. Check preds parquet." % sorted(missing_cells)
+            f"Latitude/longitude missing for grid cell(s): {sorted(missing_cells)}. Check preds parquet."
         )
 
     df = df.drop(columns=["pg_id"], errors="ignore")
