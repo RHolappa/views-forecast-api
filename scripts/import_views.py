@@ -7,14 +7,13 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-FORECAST_COLUMNS: List[str] = [
+FORECAST_COLUMNS: list[str] = [
     "grid_id",
     "latitude",
     "longitude",
@@ -57,7 +56,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "CSV with PRIO-GRID metadata (pg_id, latitude, longitude, country_id, '
+            "CSV with PRIO-GRID metadata (pg_id, latitude, longitude, country_id, "
             "optional admin levels). Required for pgm conversion."
         ),
     )
@@ -84,7 +83,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
+def build_month_lookup(codebook_path: Path) -> dict[int, str]:
     if not codebook_path.exists():
         raise FileNotFoundError(f"Codebook not found at {codebook_path}")
 
@@ -95,7 +94,7 @@ def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
     if months is None:
         raise ValueError("Expected 'months' array in codebook JSON")
 
-    lookup: Dict[int, str] = {}
+    lookup: dict[int, str] = {}
     for entry in months:
         try:
             month_id = int(entry.get("id"))
@@ -109,7 +108,7 @@ def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
     return lookup
 
 
-def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
+def load_priogrid_lookup(path: Path | None) -> pd.DataFrame | None:
     if path is None:
         logger.warning("No PRIO-GRID lookup supplied; pgm conversion will be skipped")
         return None
@@ -145,8 +144,7 @@ def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "PRIO-GRID lookup must contain columns %s; missing %s"
-            % (sorted(required), sorted(missing))
+            f"PRIO-GRID lookup must contain columns {sorted(required)}; missing {sorted(missing)}"
         )
 
     subset_cols = ["grid_id", "latitude", "longitude", "country_id"]
@@ -159,7 +157,7 @@ def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
     return df
 
 
-def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
+def load_country_centroids(path: Path | None) -> pd.DataFrame | None:
     if path is None:
         return None
     if not path.exists():
@@ -179,8 +177,7 @@ def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
     missing = required - set(df.columns)
     if missing:
         raise ValueError(
-            "Country centroids CSV must include %s; missing %s"
-            % (sorted(required), sorted(missing))
+            f"Country centroids CSV must include {sorted(required)}; missing {sorted(missing)}"
         )
     return df[["country_id", "latitude", "longitude"]]
 
@@ -233,7 +230,7 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
 def convert_priogrid(
     csv_path: Path,
     output_path: Path,
-    month_lookup: Dict[int, str],
+    month_lookup: dict[int, str],
     priogrid_lookup: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
@@ -266,8 +263,7 @@ def convert_priogrid(
     if df[["latitude", "longitude"]].isna().any().any():
         missing = df.loc[df["latitude"].isna(), "grid_id"].unique()
         raise ValueError(
-            "Latitude/longitude missing for %d grid cells. Check the PRIO-GRID lookup."
-            % len(missing)
+            f"Latitude/longitude missing for {len(missing)} grid cells. Check the PRIO-GRID lookup."
         )
 
     df = ensure_metric_columns(df)
@@ -282,7 +278,7 @@ def convert_priogrid(
 def convert_country_month(
     csv_path: Path,
     output_path: Path,
-    month_lookup: Dict[int, str],
+    month_lookup: dict[int, str],
     centroids: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
@@ -315,7 +311,7 @@ def convert_country_month(
     if df[["latitude", "longitude"]].isna().any().any():
         missing = df.loc[df["latitude"].isna(), "country_id"].unique()
         raise ValueError(
-            "Centroid lookup missing latitude/longitude for countries %s" % sorted(missing)
+            f"Centroid lookup missing latitude/longitude for countries {sorted(missing)}"
         )
 
     # Create synthetic grid ids so rows can co-exist with PRIO-GRID cells
@@ -345,7 +341,7 @@ def main() -> None:
     priogrid_lookup = load_priogrid_lookup(args.priogrid_lookup)
     country_centroids = load_country_centroids(args.country_centroids)
 
-    outputs: List[Path] = []
+    outputs: list[Path] = []
 
     pgm_files = sorted(args.raw_dir.glob("*_pgm.csv"))
     if pgm_files and priogrid_lookup is None:

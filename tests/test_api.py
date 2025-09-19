@@ -1,7 +1,7 @@
-import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+
 from app.api.dependencies import verify_api_key
+from app.main import app
 
 client = TestClient(app)
 

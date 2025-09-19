@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -14,7 +13,7 @@ import pandas as pd
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-FORECAST_COLUMNS: List[str] = [
+FORECAST_COLUMNS: list[str] = [
     "grid_id",
     "latitude",
     "longitude",
@@ -78,7 +77,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_month_and_country_lookups(cm_csv: Path) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def build_month_and_country_lookups(cm_csv: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.read_csv(cm_csv, usecols=["month_id", "year", "month", "gwcode", "isoab"])
 
     month_df = (
@@ -173,7 +172,7 @@ def main() -> None:
     if df["latitude"].isna().any() or df["longitude"].isna().any():
         missing_cells = df.loc[df["latitude"].isna(), "grid_id"].unique()
         raise ValueError(
-            "Latitude/longitude missing for grid cell(s): %s. Check preds parquet." % sorted(missing_cells)
+            f"Latitude/longitude missing for grid cell(s): {sorted(missing_cells)}. Check preds parquet."
         )
 
     df = df.drop(columns=["pg_id"], errors="ignore")

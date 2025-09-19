@@ -1,22 +1,24 @@
-from typing import List, Optional, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 from .forecast import GridCellForecast, GridCellMetadata, MonthMetadata
 
 
 class ForecastResponse(BaseModel):
-    data: List[GridCellForecast]
+    data: list[GridCellForecast]
     count: int = Field(..., description="Total number of forecasts returned")
-    query: Dict[str, Any] = Field(..., description="Query parameters used")
+    query: dict[str, Any] = Field(..., description="Query parameters used")
 
 
 class GridCellsResponse(BaseModel):
-    data: List[GridCellMetadata]
+    data: list[GridCellMetadata]
     count: int
-    countries: Optional[List[str]] = None
+    countries: list[str] | None = None
 
 
 class MonthsResponse(BaseModel):
-    data: List[MonthMetadata]
+    data: list[MonthMetadata]
     count: int
 
 
@@ -28,5 +30,5 @@ class HealthResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: str
-    detail: Optional[str] = None
+    detail: str | None = None
     status_code: int

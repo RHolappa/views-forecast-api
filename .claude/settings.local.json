@@ -10,7 +10,9 @@
       "Bash(pip3 install:*)",
       "Bash(python3:*)",
       "Bash(source:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(venv/bin/python -m ruff check:*)"
     ],
     "deny": [],
     "ask": []

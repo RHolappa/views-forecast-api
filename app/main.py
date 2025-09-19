@@ -1,11 +1,13 @@
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.core.config import settings
-from app.core.settings import APP_NAME, APP_VERSION, APP_DESCRIPTION, tags_metadata
+
 from app.api.routes import forecasts, metadata
+from app.core.config import settings
+from app.core.settings import APP_DESCRIPTION, APP_NAME, APP_VERSION, tags_metadata
 from app.models.responses import HealthResponse
 
 logger = logging.getLogger(__name__)
@@ -17,9 +19,9 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
     logger.info(f"Environment: {settings.environment}")
     logger.info(f"Using {'local' if settings.use_local_data else 'cloud'} data")
-    
+
     yield
-    
+
     logger.info("Shutting down application")
 
 
@@ -102,7 +104,7 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     uvicorn.run(
         "app.main:app",
         host=settings.api_host,
