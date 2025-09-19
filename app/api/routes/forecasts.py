@@ -25,7 +25,7 @@ async def get_forecasts(
         description="Specific metrics to return (defaults to all metrics)",
     ),
     format: str = Query("json", description="Response format: json or ndjson"),
-    _: bool = Depends(verify_api_key)
+    _: bool = Depends(verify_api_key),
 ):
     """
     Retrieve conflict forecasts with optional filtering.
@@ -71,7 +71,7 @@ async def get_forecasts(
             months=months,
             month_range=month_range,
             metrics=metrics,
-            format=format
+            format=format,
         )
 
         forecasts = forecast_service.get_forecasts(query)
@@ -85,16 +85,12 @@ async def get_forecasts(
             return StreamingResponse(
                 generate(),
                 media_type="application/x-ndjson",
-                headers={
-                    "X-Total-Count": str(len(forecasts))
-                }
+                headers={"X-Total-Count": str(len(forecasts))},
             )
         else:
             # Return standard JSON response
             return ForecastResponse(
-                data=forecasts,
-                count=len(forecasts),
-                query=query.model_dump(exclude_none=True)
+                data=forecasts, count=len(forecasts), query=query.model_dump(exclude_none=True)
             )
 
     except ValueError as e:
@@ -110,7 +106,7 @@ async def get_forecast_summary(
     grid_ids: list[int] | None = Query(None, description="Filter by grid cell IDs"),
     months: list[str] | None = Query(None, description="Filter by months"),
     month_range: str | None = Query(None, description="Month range"),
-    _: bool = Depends(verify_api_key)
+    _: bool = Depends(verify_api_key),
 ):
     """
     Get summary statistics for forecasts matching the query.
@@ -124,10 +120,7 @@ async def get_forecast_summary(
     """
     try:
         query = ForecastQuery(
-            country=country,
-            grid_ids=grid_ids,
-            months=months,
-            month_range=month_range
+            country=country, grid_ids=grid_ids, months=months, month_range=month_range
         )
 
         forecasts = forecast_service.get_forecasts(query)

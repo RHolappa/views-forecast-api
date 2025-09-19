@@ -40,18 +40,20 @@ class ForecastMetrics(BaseModel):
     prob_10: float | None = Field(None, description="Probability of 10+ fatalities", ge=0, le=1)
     prob_100: float | None = Field(None, description="Probability of 100+ fatalities", ge=0, le=1)
     prob_1000: float | None = Field(None, description="Probability of 1000+ fatalities", ge=0, le=1)
-    prob_10000: float | None = Field(None, description="Probability of 10000+ fatalities", ge=0, le=1)
+    prob_10000: float | None = Field(
+        None, description="Probability of 10000+ fatalities", ge=0, le=1
+    )
 
-    @field_validator('ci_50_high', 'ci_90_high', 'ci_99_high')
+    @field_validator("ci_50_high", "ci_90_high", "ci_99_high")
     @classmethod
     def validate_ci_high(cls, v, info):
         if v is None:
             return v
 
         low_field = {
-            'ci_50_high': 'ci_50_low',
-            'ci_90_high': 'ci_90_low',
-            'ci_99_high': 'ci_99_low'
+            "ci_50_high": "ci_50_low",
+            "ci_90_high": "ci_90_low",
+            "ci_99_high": "ci_99_low",
         }[info.field_name]
         low_value = info.data.get(low_field)
         if low_value is not None and v < low_value:
@@ -90,18 +92,18 @@ class ForecastQuery(BaseModel):
     metrics: list[MetricName] | None = Field(
         None,
         description="Specific metrics to return (if not specified, returns all)",
-        examples=[["map", "ci_90_low", "ci_90_high"]]
+        examples=[["map", "ci_90_low", "ci_90_high"]],
     )
     format: str = Field("json", description="Response format: json or ndjson")
 
-    @field_validator('country')
+    @field_validator("country")
     @classmethod
     def validate_country(cls, v):
         if v and len(v) != 3:
-            raise ValueError('Country code must be ISO 3166-1 alpha-3 (3 characters)')
+            raise ValueError("Country code must be ISO 3166-1 alpha-3 (3 characters)")
         return v.upper() if v else v
 
-    @field_validator('months')
+    @field_validator("months")
     @classmethod
     def validate_months(cls, v):
         if v:
@@ -112,11 +114,11 @@ class ForecastQuery(BaseModel):
                     raise ValueError(f"Invalid month format: {month}. Use YYYY-MM") from e
         return v
 
-    @field_validator('month_range')
+    @field_validator("month_range")
     @classmethod
     def validate_month_range(cls, v):
         if v:
-            parts = v.split(':')
+            parts = v.split(":")
             if len(parts) != 2:
                 raise ValueError("Month range must be in format YYYY-MM:YYYY-MM")
             for part in parts:
@@ -126,7 +128,7 @@ class ForecastQuery(BaseModel):
                     raise ValueError(f"Invalid month format in range: {part}") from e
         return v
 
-    @field_validator('metrics')
+    @field_validator("metrics")
     @classmethod
     def deduplicate_metrics(cls, v):
         if not v:

@@ -6,12 +6,7 @@ import pandas as pd
 from cachetools import TTLCache
 
 from app.core.config import settings
-from app.models.forecast import (
-    ALL_METRIC_NAMES,
-    ForecastMetrics,
-    GridCellForecast,
-    MetricName,
-)
+from app.models.forecast import ALL_METRIC_NAMES, ForecastMetrics, GridCellForecast, MetricName
 
 logger = logging.getLogger(__name__)
 
@@ -105,26 +100,26 @@ class DataLoader:
                     map_value = np.random.exponential(scale=10)
 
                     row = {
-                        'grid_id': grid_id,
-                        'latitude': round(lat, 4),
-                        'longitude': round(lon, 4),
-                        'country_id': country,
-                        'admin_1_id': f"{country}_R{i//3}",
-                        'admin_2_id': f"{country}_D{i}",
-                        'month': month,
-                        'map': map_value,
-                        'ci_50_low': map_value * 0.7,
-                        'ci_50_high': map_value * 1.3,
-                        'ci_90_low': map_value * 0.4,
-                        'ci_90_high': map_value * 2.0,
-                        'ci_99_low': map_value * 0.1,
-                        'ci_99_high': map_value * 3.5,
-                        'prob_0': np.random.beta(5, 2),
-                        'prob_1': np.random.beta(4, 3),
-                        'prob_10': np.random.beta(3, 4),
-                        'prob_100': np.random.beta(2, 5),
-                        'prob_1000': np.random.beta(1, 6),
-                        'prob_10000': np.random.beta(1, 10),
+                        "grid_id": grid_id,
+                        "latitude": round(lat, 4),
+                        "longitude": round(lon, 4),
+                        "country_id": country,
+                        "admin_1_id": f"{country}_R{i//3}",
+                        "admin_2_id": f"{country}_D{i}",
+                        "month": month,
+                        "map": map_value,
+                        "ci_50_low": map_value * 0.7,
+                        "ci_50_high": map_value * 1.3,
+                        "ci_90_low": map_value * 0.4,
+                        "ci_90_high": map_value * 2.0,
+                        "ci_99_low": map_value * 0.1,
+                        "ci_99_high": map_value * 3.5,
+                        "prob_0": np.random.beta(5, 2),
+                        "prob_1": np.random.beta(4, 3),
+                        "prob_10": np.random.beta(3, 4),
+                        "prob_100": np.random.beta(2, 5),
+                        "prob_1000": np.random.beta(1, 6),
+                        "prob_10000": np.random.beta(1, 10),
                     }
                     data.append(row)
 
@@ -144,20 +139,20 @@ class DataLoader:
         country: str | None = None,
         grid_ids: list[int] | None = None,
         months: list[str] | None = None,
-        metrics: list[MetricName] | None = None
+        metrics: list[MetricName] | None = None,
     ) -> list[GridCellForecast]:
         """Get forecasts with optional filters"""
         df = self._load_data()
 
         # Apply filters
         if country:
-            df = df[df['country_id'] == country]
+            df = df[df["country_id"] == country]
 
         if grid_ids:
-            df = df[df['grid_id'].isin(grid_ids)]
+            df = df[df["grid_id"].isin(grid_ids)]
 
         if months:
-            df = df[df['month'].isin(months)]
+            df = df[df["month"].isin(months)]
 
         # Convert to forecast objects
         forecasts = []
@@ -167,20 +162,18 @@ class DataLoader:
             # Extract metrics
             selected_metrics = [metric.value for metric in metrics] if metrics else ALL_METRIC_NAMES
             metrics_data = {
-                name: forecast_dict[name]
-                for name in selected_metrics
-                if name in forecast_dict
+                name: forecast_dict[name] for name in selected_metrics if name in forecast_dict
             }
 
             forecast = GridCellForecast(
-                grid_id=int(forecast_dict['grid_id']),
-                latitude=float(forecast_dict['latitude']),
-                longitude=float(forecast_dict['longitude']),
-                country_id=forecast_dict['country_id'],
-                admin_1_id=forecast_dict.get('admin_1_id'),
-                admin_2_id=forecast_dict.get('admin_2_id'),
-                month=forecast_dict['month'],
-                metrics=ForecastMetrics(**metrics_data)
+                grid_id=int(forecast_dict["grid_id"]),
+                latitude=float(forecast_dict["latitude"]),
+                longitude=float(forecast_dict["longitude"]),
+                country_id=forecast_dict["country_id"],
+                admin_1_id=forecast_dict.get("admin_1_id"),
+                admin_2_id=forecast_dict.get("admin_2_id"),
+                month=forecast_dict["month"],
+                metrics=ForecastMetrics(**metrics_data),
             )
             forecasts.append(forecast)
 
@@ -191,36 +184,42 @@ class DataLoader:
         df = self._load_data()
 
         months_data = []
-        for month in df['month'].unique():
-            month_df = df[df['month'] == month]
-            months_data.append({
-                'month': month,
-                'forecast_count': len(month_df),
-                'countries': month_df['country_id'].unique().tolist()
-            })
+        for month in df["month"].unique():
+            month_df = df[df["month"] == month]
+            months_data.append(
+                {
+                    "month": month,
+                    "forecast_count": len(month_df),
+                    "countries": month_df["country_id"].unique().tolist(),
+                }
+            )
 
-        return sorted(months_data, key=lambda x: x['month'])
+        return sorted(months_data, key=lambda x: x["month"])
 
     def get_grid_cells(self, country: str | None = None) -> list[dict[str, Any]]:
         """Get list of available grid cells"""
         df = self._load_data()
 
         if country:
-            df = df[df['country_id'] == country]
+            df = df[df["country_id"] == country]
 
         # Get unique grid cells
-        grid_cells = df.groupby(['grid_id', 'latitude', 'longitude', 'country_id']).first().reset_index()
+        grid_cells = (
+            df.groupby(["grid_id", "latitude", "longitude", "country_id"]).first().reset_index()
+        )
 
         cells_data = []
         for _, row in grid_cells.iterrows():
-            cells_data.append({
-                'grid_id': int(row['grid_id']),
-                'latitude': float(row['latitude']),
-                'longitude': float(row['longitude']),
-                'country_id': row['country_id'],
-                'admin_1_id': row.get('admin_1_id'),
-                'admin_2_id': row.get('admin_2_id')
-            })
+            cells_data.append(
+                {
+                    "grid_id": int(row["grid_id"]),
+                    "latitude": float(row["latitude"]),
+                    "longitude": float(row["longitude"]),
+                    "country_id": row["country_id"],
+                    "admin_1_id": row.get("admin_1_id"),
+                    "admin_2_id": row.get("admin_2_id"),
+                }
+            )
 
         return cells_data
 

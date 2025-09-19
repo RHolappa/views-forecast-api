@@ -13,9 +13,7 @@ router = APIRouter(prefix="/metadata", tags=["metadata"])
 
 
 @router.get("/months", response_model=MonthsResponse)
-async def get_available_months(
-    _: bool = Depends(verify_api_key)
-):
+async def get_available_months(_: bool = Depends(verify_api_key)):
     """
     Get list of available forecast months.
 
@@ -28,17 +26,12 @@ async def get_available_months(
 
         months = [
             MonthMetadata(
-                month=m['month'],
-                forecast_count=m['forecast_count'],
-                countries=m['countries']
+                month=m["month"], forecast_count=m["forecast_count"], countries=m["countries"]
             )
             for m in months_data
         ]
 
-        return MonthsResponse(
-            data=months,
-            count=len(months)
-        )
+        return MonthsResponse(data=months, count=len(months))
 
     except Exception as e:
         logger.error(f"Error retrieving months: {e}")
@@ -48,7 +41,7 @@ async def get_available_months(
 @router.get("/grid-cells", response_model=GridCellsResponse)
 async def get_grid_cells(
     country: str | None = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
-    _: bool = Depends(verify_api_key)
+    _: bool = Depends(verify_api_key),
 ):
     """
     Get list of available grid cells.
@@ -61,12 +54,12 @@ async def get_grid_cells(
 
         cells = [
             GridCellMetadata(
-                grid_id=c['grid_id'],
-                latitude=c['latitude'],
-                longitude=c['longitude'],
-                country_id=c['country_id'],
-                admin_1_id=c.get('admin_1_id'),
-                admin_2_id=c.get('admin_2_id')
+                grid_id=c["grid_id"],
+                latitude=c["latitude"],
+                longitude=c["longitude"],
+                country_id=c["country_id"],
+                admin_1_id=c.get("admin_1_id"),
+                admin_2_id=c.get("admin_2_id"),
             )
             for c in cells_data
         ]
@@ -75,9 +68,7 @@ async def get_grid_cells(
         countries = list({c.country_id for c in cells}) if cells else []
 
         return GridCellsResponse(
-            data=cells,
-            count=len(cells),
-            countries=sorted(countries) if not country else None
+            data=cells, count=len(cells), countries=sorted(countries) if not country else None
         )
 
     except Exception as e:
@@ -86,9 +77,7 @@ async def get_grid_cells(
 
 
 @router.get("/countries")
-async def get_countries(
-    _: bool = Depends(verify_api_key)
-):
+async def get_countries(_: bool = Depends(verify_api_key)):
     """
     Get list of available countries.
 
@@ -96,12 +85,9 @@ async def get_countries(
     """
     try:
         cells_data = data_loader.get_grid_cells()
-        countries = list({c['country_id'] for c in cells_data})
+        countries = list({c["country_id"] for c in cells_data})
 
-        return {
-            "countries": sorted(countries),
-            "count": len(countries)
-        }
+        return {"countries": sorted(countries), "count": len(countries)}
 
     except Exception as e:
         logger.error(f"Error retrieving countries: {e}")

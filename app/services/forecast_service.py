@@ -14,7 +14,7 @@ class ForecastService:
 
     def parse_month_range(self, month_range: str) -> list[str]:
         """Parse month range string into list of months"""
-        parts = month_range.split(':')
+        parts = month_range.split(":")
         if len(parts) != 2:
             raise ValueError("Invalid month range format")
 
@@ -52,13 +52,16 @@ class ForecastService:
         # Get forecasts from data loader
         metrics_filter = None
         if query.metrics:
-            metrics_filter = [MetricName(metric) if not isinstance(metric, MetricName) else metric for metric in query.metrics]
+            metrics_filter = [
+                MetricName(metric) if not isinstance(metric, MetricName) else metric
+                for metric in query.metrics
+            ]
 
         forecasts = self.data_loader.get_forecasts(
             country=query.country,
             grid_ids=query.grid_ids,
             months=months_filter,
-            metrics=metrics_filter
+            metrics=metrics_filter,
         )
 
         logger.info(f"Retrieved {len(forecasts)} forecasts")
@@ -67,27 +70,22 @@ class ForecastService:
     def get_forecast_summary(self, forecasts: list[GridCellForecast]) -> dict[str, Any]:
         """Generate summary statistics for forecasts"""
         if not forecasts:
-            return {
-                "count": 0,
-                "countries": [],
-                "months": [],
-                "grid_cells": []
-            }
+            return {"count": 0, "countries": [], "months": [], "grid_cells": []}
 
         countries = set()
         months = set()
         grid_cells = set()
 
         total_map = 0
-        min_map = float('inf')
-        max_map = float('-inf')
+        min_map = float("inf")
+        max_map = float("-inf")
 
         for forecast in forecasts:
             countries.add(forecast.country_id)
             months.add(forecast.month)
             grid_cells.add(forecast.grid_id)
 
-            if hasattr(forecast.metrics, 'map'):
+            if hasattr(forecast.metrics, "map"):
                 total_map += forecast.metrics.map
                 min_map = min(min_map, forecast.metrics.map)
                 max_map = max(max_map, forecast.metrics.map)
@@ -101,19 +99,21 @@ class ForecastService:
             "grid_cells": len(grid_cells),
             "metrics_summary": {
                 "avg_map": round(avg_map, 2),
-                "min_map": round(min_map, 2) if min_map != float('inf') else 0,
-                "max_map": round(max_map, 2) if max_map != float('-inf') else 0
-            }
+                "min_map": round(min_map, 2) if min_map != float("inf") else 0,
+                "max_map": round(max_map, 2) if max_map != float("-inf") else 0,
+            },
         }
 
-    def filter_metrics(self, forecast: GridCellForecast, metrics: list[MetricName | str]) -> dict[str, Any]:
+    def filter_metrics(
+        self, forecast: GridCellForecast, metrics: list[MetricName | str]
+    ) -> dict[str, Any]:
         """Filter forecast to include only requested metrics"""
         result = {
             "grid_id": forecast.grid_id,
             "latitude": forecast.latitude,
             "longitude": forecast.longitude,
             "country_id": forecast.country_id,
-            "month": forecast.month
+            "month": forecast.month,
         }
 
         if forecast.admin_1_id:

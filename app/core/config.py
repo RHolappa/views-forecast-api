@@ -6,9 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False
     )
 
     # API Configuration
@@ -17,16 +15,20 @@ class Settings(BaseSettings):
     api_v1_prefix: str = Field(default="/api/v1", description="API v1 prefix")
 
     # Environment
-    environment: str = Field(default="development", description="Environment (development, staging, production)")
+    environment: str = Field(
+        default="development", description="Environment (development, staging, production)"
+    )
 
     # CORS
     cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
-        description="Allowed CORS origins"
+        description="Allowed CORS origins",
     )
 
     # Cloud Storage
-    cloud_bucket_name: str | None = Field(default=None, description="Cloud bucket name for data storage")
+    cloud_bucket_name: str | None = Field(
+        default=None, description="Cloud bucket name for data storage"
+    )
     cloud_bucket_region: str = Field(default="us-east-1", description="AWS region")
     aws_access_key_id: str | None = Field(default=None, description="AWS access key")
     aws_secret_access_key: str | None = Field(default=None, description="AWS secret key")
@@ -45,7 +47,7 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
 
-    @field_validator('cors_origins', mode='before')
+    @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
@@ -55,7 +57,7 @@ class Settings(BaseSettings):
                 return [v]
         return v
 
-    @field_validator('environment')
+    @field_validator("environment")
     @classmethod
     def validate_environment(cls, v):
         allowed = {"development", "staging", "production"}

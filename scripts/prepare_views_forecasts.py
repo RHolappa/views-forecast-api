@@ -80,11 +80,9 @@ def parse_args() -> argparse.Namespace:
 def build_month_and_country_lookups(cm_csv: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.read_csv(cm_csv, usecols=["month_id", "year", "month", "gwcode", "isoab"])
 
-    month_df = (
-        df.drop_duplicates("month_id")
-        .assign(month=lambda d: d["year"].astype(str) + "-" + d["month"].astype(str).str.zfill(2))
-        [["month_id", "month"]]
-    )
+    month_df = df.drop_duplicates("month_id").assign(
+        month=lambda d: d["year"].astype(str) + "-" + d["month"].astype(str).str.zfill(2)
+    )[["month_id", "month"]]
 
     country_df = df.drop_duplicates("gwcode")[["gwcode", "isoab"]]
     country_df["gwcode"] = country_df["gwcode"].astype(int)

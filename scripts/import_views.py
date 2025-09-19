@@ -316,9 +316,7 @@ def convert_country_month(
 
     # Create synthetic grid ids so rows can co-exist with PRIO-GRID cells
     df = df.sort_values(["country_id", "month"])
-    df["grid_id"] = (
-        df["country_id"].astype("category").cat.codes.astype(int) + 10_000_000
-    )
+    df["grid_id"] = df["country_id"].astype("category").cat.codes.astype(int) + 10_000_000
 
     df["admin_1_id"] = None
     df["admin_2_id"] = None

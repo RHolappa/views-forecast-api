@@ -20,7 +20,7 @@ def test_forecast_metrics_validation():
         prob_10=0.2,
         prob_100=0.1,
         prob_1000=0.05,
-        prob_10000=0.01
+        prob_10000=0.01,
     )
     assert metrics.map == 10.5
     assert metrics.ci_50_low < metrics.ci_50_high
@@ -48,7 +48,7 @@ def test_forecast_metrics_validation():
             prob_10=0.2,
             prob_100=0.1,
             prob_1000=0.05,
-            prob_10000=0.01
+            prob_10000=0.01,
         )
 
     # Invalid: Probability > 1
@@ -66,7 +66,7 @@ def test_forecast_metrics_validation():
             prob_10=0.2,
             prob_100=0.1,
             prob_1000=0.05,
-            prob_10000=0.01
+            prob_10000=0.01,
         )
 
 
@@ -91,8 +91,8 @@ def test_grid_cell_forecast():
             prob_10=0.2,
             prob_100=0.1,
             prob_1000=0.05,
-            prob_10000=0.01
-        )
+            prob_10000=0.01,
+        ),
     )
     assert forecast.grid_id == 1
     assert forecast.country_id == "UGA"
@@ -105,11 +105,15 @@ def test_forecast_query_validation():
     query = ForecastQuery(
         country="UGA",
         months=["2024-01", "2024-02"],
-        metrics=[MetricName.map, MetricName.ci_90_low, MetricName.ci_90_high]
+        metrics=[MetricName.map, MetricName.ci_90_low, MetricName.ci_90_high],
     )
     assert query.country == "UGA"
     assert len(query.months) == 2
-    assert query.metrics == [MetricName.map.value, MetricName.ci_90_low.value, MetricName.ci_90_high.value]
+    assert query.metrics == [
+        MetricName.map.value,
+        MetricName.ci_90_low.value,
+        MetricName.ci_90_high.value,
+    ]
 
     # Test country code validation
     query = ForecastQuery(country="uga")

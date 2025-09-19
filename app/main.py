@@ -30,7 +30,7 @@ app = FastAPI(
     version=APP_VERSION,
     description=APP_DESCRIPTION,
     openapi_tags=tags_metadata,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -47,11 +47,7 @@ app.add_middleware(
 @app.get("/health", tags=["health"], response_model=HealthResponse)
 async def health_check():
     """Basic health check endpoint"""
-    return HealthResponse(
-        status="healthy",
-        version=APP_VERSION,
-        environment=settings.environment
-    )
+    return HealthResponse(status="healthy", version=APP_VERSION, environment=settings.environment)
 
 
 @app.get("/ready", tags=["health"])
@@ -62,15 +58,9 @@ async def readiness_check():
 
 
 # Include routers
-app.include_router(
-    forecasts.router,
-    prefix=settings.api_v1_prefix
-)
+app.include_router(forecasts.router, prefix=settings.api_v1_prefix)
 
-app.include_router(
-    metadata.router,
-    prefix=settings.api_v1_prefix
-)
+app.include_router(metadata.router, prefix=settings.api_v1_prefix)
 
 
 # Global exception handler
@@ -81,8 +71,8 @@ async def global_exception_handler(request, exc):
         status_code=500,
         content={
             "error": "Internal server error",
-            "detail": str(exc) if settings.is_development else None
-        }
+            "detail": str(exc) if settings.is_development else None,
+        },
     )
 
 
@@ -97,8 +87,8 @@ async def root():
         "endpoints": {
             "forecasts": f"{settings.api_v1_prefix}/forecasts",
             "metadata": f"{settings.api_v1_prefix}/metadata",
-            "health": "/health"
-        }
+            "health": "/health",
+        },
     }
 
 
@@ -110,5 +100,5 @@ if __name__ == "__main__":
         host=settings.api_host,
         port=settings.api_port,
         reload=settings.is_development,
-        log_level=settings.log_level.lower()
+        log_level=settings.log_level.lower(),
     )
