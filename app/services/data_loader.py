@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from cachetools import TTLCache
@@ -15,7 +15,7 @@ class DataLoader:
     def __init__(self):
         self.cache = TTLCache(maxsize=settings.cache_max_size, ttl=settings.cache_ttl_seconds)
         self.data_path = Path(settings.data_path)
-        self._data: pd.DataFrame | None = None
+        self._data: Optional[pd.DataFrame] = None
 
         if settings.use_local_data:
             self._ensure_local_data_exists()
@@ -136,11 +136,11 @@ class DataLoader:
 
     def get_forecasts(
         self,
-        country: str | None = None,
-        grid_ids: list[int] | None = None,
-        months: list[str] | None = None,
-        metrics: list[MetricName] | None = None,
-    ) -> list[GridCellForecast]:
+        country: Optional[str] = None,
+        grid_ids: Optional[List[int]] = None,
+        months: Optional[List[str]] = None,
+        metrics: Optional[List[MetricName]] = None,
+    ) -> List[GridCellForecast]:
         """Get forecasts with optional filters"""
         df = self._load_data()
 
@@ -179,7 +179,7 @@ class DataLoader:
 
         return forecasts
 
-    def get_available_months(self) -> list[dict[str, Any]]:
+    def get_available_months(self) -> List[Dict[str, Any]]:
         """Get list of available forecast months"""
         df = self._load_data()
 
@@ -196,7 +196,7 @@ class DataLoader:
 
         return sorted(months_data, key=lambda x: x["month"])
 
-    def get_grid_cells(self, country: str | None = None) -> list[dict[str, Any]]:
+    def get_grid_cells(self, country: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get list of available grid cells"""
         df = self._load_data()
 

@@ -1,10 +1,10 @@
 [tool.black]
 line-length = 100
-target-version = ['py311']
+target-version = ['py39']
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
@@ -14,12 +14,14 @@ select = [
     "I",  # isort
     "B",  # flake8-bugbear
     "C4",  # flake8-comprehensions
-    "UP",  # pyupgrade
 ]
 ignore = [
     "E501",  # line too long (handled by black)
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
+    "UP006",  # Don't upgrade to Python 3.10+ syntax
+    "UP007",  # Don't use X | Y unions
+    "UP035",  # Don't flag deprecated typing imports
 ]
 
 [tool.isort]
@@ -35,6 +37,8 @@ ensure_newline_before_comments = true
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["app"]

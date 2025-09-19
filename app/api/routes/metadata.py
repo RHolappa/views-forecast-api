@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -40,7 +41,7 @@ async def get_available_months(_: bool = Depends(verify_api_key)):
 
 @router.get("/grid-cells", response_model=GridCellsResponse)
 async def get_grid_cells(
-    country: str | None = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
+    country: Optional[str] = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
     _: bool = Depends(verify_api_key),
 ):
     """

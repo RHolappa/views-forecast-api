@@ -1,4 +1,5 @@
 import json
+from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,25 +21,25 @@ class Settings(BaseSettings):
     )
 
     # CORS
-    cors_origins: list[str] = Field(
+    cors_origins: List[str] = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
         description="Allowed CORS origins",
     )
 
     # Cloud Storage
-    cloud_bucket_name: str | None = Field(
+    cloud_bucket_name: Optional[str] = Field(
         default=None, description="Cloud bucket name for data storage"
     )
     cloud_bucket_region: str = Field(default="us-east-1", description="AWS region")
-    aws_access_key_id: str | None = Field(default=None, description="AWS access key")
-    aws_secret_access_key: str | None = Field(default=None, description="AWS secret key")
+    aws_access_key_id: Optional[str] = Field(default=None, description="AWS access key")
+    aws_secret_access_key: Optional[str] = Field(default=None, description="AWS secret key")
 
     # Cache Configuration
     cache_ttl_seconds: int = Field(default=3600, description="Cache TTL in seconds")
     cache_max_size: int = Field(default=1000, description="Maximum cache size")
 
     # Optional API Authentication
-    api_key: str | None = Field(default=None, description="Optional API key for authentication")
+    api_key: Optional[str] = Field(default=None, description="Optional API key for authentication")
 
     # Data Configuration
     data_path: str = Field(default="data/sample", description="Path to local data")

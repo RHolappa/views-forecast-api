@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List
 
 from app.models.forecast import ForecastQuery, GridCellForecast, MetricName
 from app.services.data_loader import data_loader
@@ -12,7 +12,7 @@ class ForecastService:
     def __init__(self):
         self.data_loader = data_loader
 
-    def parse_month_range(self, month_range: str) -> list[str]:
+    def parse_month_range(self, month_range: str) -> List[str]:
         """Parse month range string into list of months"""
         parts = month_range.split(":")
         if len(parts) != 2:
@@ -36,7 +36,7 @@ class ForecastService:
 
         return months
 
-    def get_forecasts(self, query: ForecastQuery) -> list[GridCellForecast]:
+    def get_forecasts(self, query: ForecastQuery) -> List[GridCellForecast]:
         """Get forecasts based on query parameters"""
         # Process month filters
         months_filter = query.months
@@ -67,7 +67,7 @@ class ForecastService:
         logger.info(f"Retrieved {len(forecasts)} forecasts")
         return forecasts
 
-    def get_forecast_summary(self, forecasts: list[GridCellForecast]) -> dict[str, Any]:
+    def get_forecast_summary(self, forecasts: List[GridCellForecast]) -> Dict[str, Any]:
         """Generate summary statistics for forecasts"""
         if not forecasts:
             return {"count": 0, "countries": [], "months": [], "grid_cells": []}
@@ -105,8 +105,8 @@ class ForecastService:
         }
 
     def filter_metrics(
-        self, forecast: GridCellForecast, metrics: list[MetricName | str]
-    ) -> dict[str, Any]:
+        self, forecast: GridCellForecast, metrics: List[MetricName]
+    ) -> Dict[str, Any]:
         """Filter forecast to include only requested metrics"""
         result = {
             "grid_id": forecast.grid_id,

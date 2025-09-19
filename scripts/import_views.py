@@ -7,13 +7,14 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-FORECAST_COLUMNS: list[str] = [
+FORECAST_COLUMNS: List[str] = [
     "grid_id",
     "latitude",
     "longitude",
@@ -83,7 +84,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_month_lookup(codebook_path: Path) -> dict[int, str]:
+def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
     if not codebook_path.exists():
         raise FileNotFoundError(f"Codebook not found at {codebook_path}")
 
@@ -94,7 +95,7 @@ def build_month_lookup(codebook_path: Path) -> dict[int, str]:
     if months is None:
         raise ValueError("Expected 'months' array in codebook JSON")
 
-    lookup: dict[int, str] = {}
+    lookup: Dict[int, str] = {}
     for entry in months:
         try:
             month_id = int(entry.get("id"))
@@ -108,7 +109,7 @@ def build_month_lookup(codebook_path: Path) -> dict[int, str]:
     return lookup
 
 
-def load_priogrid_lookup(path: Path | None) -> pd.DataFrame | None:
+def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
     if path is None:
         logger.warning("No PRIO-GRID lookup supplied; pgm conversion will be skipped")
         return None
@@ -157,7 +158,7 @@ def load_priogrid_lookup(path: Path | None) -> pd.DataFrame | None:
     return df
 
 
-def load_country_centroids(path: Path | None) -> pd.DataFrame | None:
+def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
     if path is None:
         return None
     if not path.exists():
@@ -230,7 +231,7 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
 def convert_priogrid(
     csv_path: Path,
     output_path: Path,
-    month_lookup: dict[int, str],
+    month_lookup: Dict[int, str],
     priogrid_lookup: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
@@ -278,7 +279,7 @@ def convert_priogrid(
 def convert_country_month(
     csv_path: Path,
     output_path: Path,
-    month_lookup: dict[int, str],
+    month_lookup: Dict[int, str],
     centroids: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
@@ -339,7 +340,7 @@ def main() -> None:
     priogrid_lookup = load_priogrid_lookup(args.priogrid_lookup)
     country_centroids = load_country_centroids(args.country_centroids)
 
-    outputs: list[Path] = []
+    outputs: List[Path] = []
 
     pgm_files = sorted(args.raw_dir.glob("*_pgm.csv"))
     if pgm_files and priogrid_lookup is None:

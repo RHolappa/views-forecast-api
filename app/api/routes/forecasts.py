@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -16,11 +17,11 @@ router = APIRouter(prefix="/forecasts", tags=["forecasts"])
 
 @router.get("", response_model=ForecastResponse)
 async def get_forecasts(
-    country: str | None = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
-    grid_ids: list[int] | None = Query(None, description="Filter by grid cell IDs"),
-    months: list[str] | None = Query(None, description="Filter by months (YYYY-MM format)"),
-    month_range: str | None = Query(None, description="Month range (YYYY-MM:YYYY-MM)"),
-    metrics: list[MetricName] | None = Query(
+    country: Optional[str] = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
+    grid_ids: Optional[List[int]] = Query(None, description="Filter by grid cell IDs"),
+    months: Optional[List[str]] = Query(None, description="Filter by months (YYYY-MM format)"),
+    month_range: Optional[str] = Query(None, description="Month range (YYYY-MM:YYYY-MM)"),
+    metrics: Optional[List[MetricName]] = Query(
         None,
         description="Specific metrics to return (defaults to all metrics)",
     ),
@@ -102,10 +103,10 @@ async def get_forecasts(
 
 @router.get("/summary")
 async def get_forecast_summary(
-    country: str | None = Query(None, description="Filter by country code"),
-    grid_ids: list[int] | None = Query(None, description="Filter by grid cell IDs"),
-    months: list[str] | None = Query(None, description="Filter by months"),
-    month_range: str | None = Query(None, description="Month range"),
+    country: Optional[str] = Query(None, description="Filter by country code"),
+    grid_ids: Optional[List[int]] = Query(None, description="Filter by grid cell IDs"),
+    months: Optional[List[str]] = Query(None, description="Filter by months"),
+    month_range: Optional[str] = Query(None, description="Month range"),
     _: bool = Depends(verify_api_key),
 ):
     """

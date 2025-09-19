@@ -1,5 +1,6 @@
 from datetime import date
 from enum import Enum
+from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -28,19 +29,35 @@ class ForecastMetrics(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    map: float | None = Field(None, description="Most Accurate Prediction value", ge=0)
-    ci_50_low: float | None = Field(None, description="50% confidence interval lower bound", ge=0)
-    ci_50_high: float | None = Field(None, description="50% confidence interval upper bound", ge=0)
-    ci_90_low: float | None = Field(None, description="90% confidence interval lower bound", ge=0)
-    ci_90_high: float | None = Field(None, description="90% confidence interval upper bound", ge=0)
-    ci_99_low: float | None = Field(None, description="99% confidence interval lower bound", ge=0)
-    ci_99_high: float | None = Field(None, description="99% confidence interval upper bound", ge=0)
-    prob_0: float | None = Field(None, description="Probability of 0 fatalities", ge=0, le=1)
-    prob_1: float | None = Field(None, description="Probability of 1+ fatalities", ge=0, le=1)
-    prob_10: float | None = Field(None, description="Probability of 10+ fatalities", ge=0, le=1)
-    prob_100: float | None = Field(None, description="Probability of 100+ fatalities", ge=0, le=1)
-    prob_1000: float | None = Field(None, description="Probability of 1000+ fatalities", ge=0, le=1)
-    prob_10000: float | None = Field(
+    map: Optional[float] = Field(None, description="Most Accurate Prediction value", ge=0)
+    ci_50_low: Optional[float] = Field(
+        None, description="50% confidence interval lower bound", ge=0
+    )
+    ci_50_high: Optional[float] = Field(
+        None, description="50% confidence interval upper bound", ge=0
+    )
+    ci_90_low: Optional[float] = Field(
+        None, description="90% confidence interval lower bound", ge=0
+    )
+    ci_90_high: Optional[float] = Field(
+        None, description="90% confidence interval upper bound", ge=0
+    )
+    ci_99_low: Optional[float] = Field(
+        None, description="99% confidence interval lower bound", ge=0
+    )
+    ci_99_high: Optional[float] = Field(
+        None, description="99% confidence interval upper bound", ge=0
+    )
+    prob_0: Optional[float] = Field(None, description="Probability of 0 fatalities", ge=0, le=1)
+    prob_1: Optional[float] = Field(None, description="Probability of 1+ fatalities", ge=0, le=1)
+    prob_10: Optional[float] = Field(None, description="Probability of 10+ fatalities", ge=0, le=1)
+    prob_100: Optional[float] = Field(
+        None, description="Probability of 100+ fatalities", ge=0, le=1
+    )
+    prob_1000: Optional[float] = Field(
+        None, description="Probability of 1000+ fatalities", ge=0, le=1
+    )
+    prob_10000: Optional[float] = Field(
         None, description="Probability of 10000+ fatalities", ge=0, le=1
     )
 
@@ -76,8 +93,8 @@ class GridCellForecast(BaseModel):
     latitude: float = Field(..., ge=-90, le=90, description="Grid cell center latitude")
     longitude: float = Field(..., ge=-180, le=180, description="Grid cell center longitude")
     country_id: str = Field(..., description="ISO 3166-1 alpha-3 country code")
-    admin_1_id: str | None = Field(None, description="Admin level 1 identifier")
-    admin_2_id: str | None = Field(None, description="Admin level 2 identifier")
+    admin_1_id: Optional[str] = Field(None, description="Admin level 1 identifier")
+    admin_2_id: Optional[str] = Field(None, description="Admin level 2 identifier")
     month: str = Field(..., description="Forecast month in YYYY-MM format")
     metrics: ForecastMetrics
 
@@ -85,11 +102,11 @@ class GridCellForecast(BaseModel):
 class ForecastQuery(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    country: str | None = Field(None, description="Filter by country code (ISO 3166-1 alpha-3)")
-    grid_ids: list[int] | None = Field(None, description="Filter by specific grid cell IDs")
-    months: list[str] | None = Field(None, description="Filter by months (YYYY-MM format)")
-    month_range: str | None = Field(None, description="Month range in format YYYY-MM:YYYY-MM")
-    metrics: list[MetricName] | None = Field(
+    country: Optional[str] = Field(None, description="Filter by country code (ISO 3166-1 alpha-3)")
+    grid_ids: Optional[List[int]] = Field(None, description="Filter by specific grid cell IDs")
+    months: Optional[List[str]] = Field(None, description="Filter by months (YYYY-MM format)")
+    month_range: Optional[str] = Field(None, description="Month range in format YYYY-MM:YYYY-MM")
+    metrics: Optional[List[MetricName]] = Field(
         None,
         description="Specific metrics to return (if not specified, returns all)",
         examples=[["map", "ci_90_low", "ci_90_high"]],
@@ -133,7 +150,7 @@ class ForecastQuery(BaseModel):
     def deduplicate_metrics(cls, v):
         if not v:
             return v
-        unique: list[MetricName] = []
+        unique: List[MetricName] = []
         for metric in v:
             if metric not in unique:
                 unique.append(metric)
@@ -145,11 +162,11 @@ class GridCellMetadata(BaseModel):
     latitude: float
     longitude: float
     country_id: str
-    admin_1_id: str | None = None
-    admin_2_id: str | None = None
+    admin_1_id: Optional[str] = None
+    admin_2_id: Optional[str] = None
 
 
 class MonthMetadata(BaseModel):
     month: str
     forecast_count: int
-    countries: list[str]
+    countries: List[str]
