@@ -1,18 +1,5 @@
 # VIEWS Conflict Forecast API
 
-A high-performance REST API for serving grid-level conflict predictions with uncertainty quantification. Built with FastAPI and designed for scalability.
-
-## Features
-
-- **Grid-cell level forecasts** with 13 prediction metrics including:
-  - Most Accurate Prediction (MAP)
-  - Confidence intervals (50%, 90%, 99%)
-  - Probability thresholds (0, 1, 10, 100, 1000, 10000 fatalities)
-- **Flexible filtering** by country, grid cells, and time periods
-- **Multiple response formats** (JSON, NDJSON for streaming)
-- **High performance** with caching and efficient data storage
-- **Production-ready** with health checks, logging, and Docker support
-
 ## Quick Start
 
 ### Prerequisites
@@ -48,13 +35,27 @@ make run  # Production mode
 
 The API will be available at `http://localhost:8000`
 
+## API Capabilities
+Make sure you have the X-API-Key header used based on the env file
+- Metadata coverage: months and grid cells are exposed via `/api/v1/metadata/months` and `/api/v1/metadata/grid-cells`.
+- Country-wide retrieval: `GET /api/v1/forecasts?country=UGA` returns every grid cell in the country with the standard 13 metrics.
+- Targeted grid lookups: use `grid_ids` with one or many IDs to pull specific cells alongside other filters.
+- Temporal slicing: apply `months=YYYY-MM` or `month_range=YYYY-MM:YYYY-MM` to focus on single months or contiguous ranges.
+- Metric selection: repeat the `metrics` parameter (e.g., `metrics=map`) to limit the payload to the values you need.
+- Response formats and metadata: choose `format=json` or `format=ndjson`; each record includes the grid ID, centroid latitude/longitude, UN M49 country ID, and optional Admin-1/Admin-2 identifiers.
+
 ## API Documentation
 
 Once running, visit:
 - **Interactive API docs**: http://localhost:8000/docs
 - **OpenAPI schema**: http://localhost:8000/openapi.json
 
-(X-API-Key header from env file can be used)
+### Bruno
+https://www.usebruno.com/
+
+The Bruno workspace in `views-forecast-api-bruno/` ships ready-made requests for the capabilities above—open it in Bruno Desktop or run with the CLI after setting your API key.
+
+(X-API-Key header from env file needed)
 
 ### Key Endpoints
 
@@ -76,6 +77,8 @@ Example:
 curl "http://localhost:8000/api/v1/forecasts?country=UGA&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
+Each forecast row includes `grid_id`, centroid latitude/longitude, the UN M49 `country_id`, and optional `admin_1_id` and `admin_2_id` fields.
+
 #### Get Available Months
 ```bash
 GET /api/v1/metadata/months
@@ -88,7 +91,7 @@ Returns all months with available forecast data.
 GET /api/v1/metadata/grid-cells?country=UGA
 ```
 
-Returns grid cells, optionally filtered by country.
+Returns grid cells, optionally filtered by country. Each record includes the grid ID, centroid lat/lon, the UN M49 country code, and admin identifiers when available.
 
 ## Data Storage
 
@@ -103,33 +106,6 @@ The API supports two data storage modes:
 - Configure cloud credentials in `.env`
 - Set `USE_LOCAL_DATA=false`
 - Supports AWS S3, Google Cloud Storage, Azure Blob Storage
-
-## Configuration
-
-Key environment variables:
-
-```env
-# API Configuration
-API_HOST=0.0.0.0
-API_PORT=8000
-ENVIRONMENT=development
-
-# Data Source
-USE_LOCAL_DATA=true
-DATA_PATH=data/sample
-
-# Cloud Storage (for production)
-CLOUD_BUCKET_NAME=views-forecast-data
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-
-# Cache
-CACHE_TTL_SECONDS=3600
-CACHE_MAX_SIZE=1000
-
-# Optional Authentication
-API_KEY=your-api-key
-```
 
 ## Development
 
@@ -152,7 +128,7 @@ make format  # Auto-format code
    venv/bin/python scripts/prepare_views_forecasts.py \
      --pgm-csv data/views_raw/2025/07/fatalities002_2025_07_t01_pgm.csv \
      --cm-csv  data/views_raw/2025/07/fatalities002_2025_07_t01_cm.csv \
-     --preds-parquet "data/views_parquet/2025/07/preds_001 (1).parquet" \
+     --preds-parquet "data/views_parquet/2025/07/preds_001.parquet" \
      --hdi-parquet data/views_parquet/2025/07/preds_001_90_hdi.parquet \
      --output data/views_parquet/2025/07/api_ready/forecasts.parquet \
      --overwrite
@@ -221,12 +197,6 @@ docker-compose up -d
 3. **Data Storage**: Use cloud storage (S3/GCS) for production data
 4. **Monitoring**: Integrate with APM tools using OpenTelemetry
 
-### Security
-
-- Use API keys in production (`API_KEY` environment variable)
-- Configure CORS origins appropriately
-- Use HTTPS in production (terminate TLS at load balancer)
-- Regularly update dependencies
 
 ## Future Enhancements
 

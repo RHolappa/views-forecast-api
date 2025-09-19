@@ -1,0 +1,1041 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "VIEWS Forecast API",
+    "description": "\nVIEWS Conflict Forecast API provides grid-level conflict predictions with uncertainty quantification.\n\n## Features\n* Grid-cell level forecasts with 13 prediction metrics\n* Country and region filtering\n* Flexible time range queries\n* Multiple response formats (JSON, NDJSON)\n",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Health Check",
+        "description": "Basic health check endpoint",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness Check",
+        "description": "Readiness check endpoint for container orchestration",
+        "operationId": "readiness_check_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecasts": {
+      "get": {
+        "tags": [
+          "forecasts"
+        ],
+        "summary": "Get Forecasts",
+        "description": "Retrieve conflict forecasts with optional filtering.\n\n## Query Parameters\n\n- **country**: ISO 3166-1 alpha-3 country code (e.g., \"UGA\", \"KEN\")\n- **grid_ids**: List of grid cell IDs (can be repeated: ?grid_ids=1&grid_ids=2)\n- **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)\n- **month_range**: Range of months (e.g., \"2024-01:2024-06\")\n- **metrics**: Specific metrics to include (if not specified, returns all 13 metrics)\n- **format**: Response format (\"json\" or \"ndjson\" for streaming)\n\n## Available Metrics\n\n- map: Most Accurate Prediction\n- ci_50_low, ci_50_high: 50% confidence interval\n- ci_90_low, ci_90_high: 90% confidence interval\n- ci_99_low, ci_99_high: 99% confidence interval\n- prob_0: Probability of 0 fatalities\n- prob_1: Probability of 1+ fatalities\n- prob_10: Probability of 10+ fatalities\n- prob_100: Probability of 100+ fatalities\n- prob_1000: Probability of 1000+ fatalities\n- prob_10000: Probability of 10000+ fatalities\n\n## Examples\n\nGet all forecasts for Uganda in January 2024:\n```\nGET /api/v1/forecasts?country=UGA&months=2024-01\n```\n\nGet specific metrics for a grid cell range over 6 months:\n```\nGET /api/v1/forecasts?grid_ids=1&grid_ids=2&month_range=2024-01:2024-06&metrics=map&metrics=ci_90_low&metrics=ci_90_high\n```",
+        "operationId": "get_forecasts_api_v1_forecasts_get",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by country code (ISO 3166-1 alpha-3)",
+              "title": "Country"
+            },
+            "description": "Filter by country code (ISO 3166-1 alpha-3)"
+          },
+          {
+            "name": "grid_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by grid cell IDs",
+              "title": "Grid Ids"
+            },
+            "description": "Filter by grid cell IDs"
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by months (YYYY-MM format)",
+              "title": "Months"
+            },
+            "description": "Filter by months (YYYY-MM format)"
+          },
+          {
+            "name": "month_range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Month range (YYYY-MM:YYYY-MM)",
+              "title": "Month Range"
+            },
+            "description": "Month range (YYYY-MM:YYYY-MM)"
+          },
+          {
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MetricName"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Specific metrics to return (defaults to all metrics)",
+              "title": "Metrics"
+            },
+            "description": "Specific metrics to return (defaults to all metrics)"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Response format: json or ndjson",
+              "default": "json",
+              "title": "Format"
+            },
+            "description": "Response format: json or ndjson"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/forecasts/summary": {
+      "get": {
+        "tags": [
+          "forecasts"
+        ],
+        "summary": "Get Forecast Summary",
+        "description": "Get summary statistics for forecasts matching the query.\n\nReturns aggregate information including:\n- Total count of forecasts\n- List of countries covered\n- List of months covered\n- Number of unique grid cells\n- Summary statistics for MAP values",
+        "operationId": "get_forecast_summary_api_v1_forecasts_summary_get",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by country code",
+              "title": "Country"
+            },
+            "description": "Filter by country code"
+          },
+          {
+            "name": "grid_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by grid cell IDs",
+              "title": "Grid Ids"
+            },
+            "description": "Filter by grid cell IDs"
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by months",
+              "title": "Months"
+            },
+            "description": "Filter by months"
+          },
+          {
+            "name": "month_range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Month range",
+              "title": "Month Range"
+            },
+            "description": "Month range"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metadata/months": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get Available Months",
+        "description": "Get list of available forecast months.\n\nReturns all months for which forecast data is available,\nalong with the count of forecasts and countries covered\nfor each month.",
+        "operationId": "get_available_months_api_v1_metadata_months_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metadata/grid-cells": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get Grid Cells",
+        "description": "Get list of available grid cells.\n\nReturns all grid cells in the system, optionally filtered by country.\nEach grid cell includes its ID, coordinates, and administrative boundaries.",
+        "operationId": "get_grid_cells_api_v1_metadata_grid_cells_get",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by country code (ISO 3166-1 alpha-3)",
+              "title": "Country"
+            },
+            "description": "Filter by country code (ISO 3166-1 alpha-3)"
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GridCellsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metadata/countries": {
+      "get": {
+        "tags": [
+          "metadata"
+        ],
+        "summary": "Get Countries",
+        "description": "Get list of available countries.\n\nReturns all country codes that have forecast data available.",
+        "operationId": "get_countries_api_v1_metadata_countries_get",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint with API information",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ForecastMetrics": {
+        "properties": {
+          "map": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Map",
+            "description": "Most Accurate Prediction value"
+          },
+          "ci_50_low": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 50 Low",
+            "description": "50% confidence interval lower bound"
+          },
+          "ci_50_high": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 50 High",
+            "description": "50% confidence interval upper bound"
+          },
+          "ci_90_low": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 90 Low",
+            "description": "90% confidence interval lower bound"
+          },
+          "ci_90_high": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 90 High",
+            "description": "90% confidence interval upper bound"
+          },
+          "ci_99_low": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 99 Low",
+            "description": "99% confidence interval lower bound"
+          },
+          "ci_99_high": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ci 99 High",
+            "description": "99% confidence interval upper bound"
+          },
+          "prob_0": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 0",
+            "description": "Probability of 0 fatalities"
+          },
+          "prob_1": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 1",
+            "description": "Probability of 1+ fatalities"
+          },
+          "prob_10": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 10",
+            "description": "Probability of 10+ fatalities"
+          },
+          "prob_100": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 100",
+            "description": "Probability of 100+ fatalities"
+          },
+          "prob_1000": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 1000",
+            "description": "Probability of 1000+ fatalities"
+          },
+          "prob_10000": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prob 10000",
+            "description": "Probability of 10000+ fatalities"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ForecastMetrics",
+        "description": "Complete or filtered set of available forecast metrics."
+      },
+      "ForecastResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/GridCellForecast"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Total number of forecasts returned"
+          },
+          "query": {
+            "type": "object",
+            "title": "Query",
+            "description": "Query parameters used"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "count",
+          "query"
+        ],
+        "title": "ForecastResponse"
+      },
+      "GridCellForecast": {
+        "properties": {
+          "grid_id": {
+            "type": "integer",
+            "title": "Grid Id",
+            "description": "Unique grid cell identifier"
+          },
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude",
+            "description": "Grid cell center latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude",
+            "description": "Grid cell center longitude"
+          },
+          "country_id": {
+            "type": "string",
+            "title": "Country Id",
+            "description": "ISO 3166-1 alpha-3 country code"
+          },
+          "admin_1_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin 1 Id",
+            "description": "Admin level 1 identifier"
+          },
+          "admin_2_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin 2 Id",
+            "description": "Admin level 2 identifier"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "Forecast month in YYYY-MM format"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/ForecastMetrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grid_id",
+          "latitude",
+          "longitude",
+          "country_id",
+          "month",
+          "metrics"
+        ],
+        "title": "GridCellForecast"
+      },
+      "GridCellMetadata": {
+        "properties": {
+          "grid_id": {
+            "type": "integer",
+            "title": "Grid Id"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "country_id": {
+            "type": "string",
+            "title": "Country Id"
+          },
+          "admin_1_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin 1 Id"
+          },
+          "admin_2_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Admin 2 Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grid_id",
+          "latitude",
+          "longitude",
+          "country_id"
+        ],
+        "title": "GridCellMetadata"
+      },
+      "GridCellsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/GridCellMetadata"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "GridCellsResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "healthy"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "1.0.0"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "environment"
+        ],
+        "title": "HealthResponse"
+      },
+      "MetricName": {
+        "type": "string",
+        "enum": [
+          "map",
+          "ci_50_low",
+          "ci_50_high",
+          "ci_90_low",
+          "ci_90_high",
+          "ci_99_low",
+          "ci_99_high",
+          "prob_0",
+          "prob_1",
+          "prob_10",
+          "prob_100",
+          "prob_1000",
+          "prob_10000"
+        ],
+        "title": "MetricName"
+      },
+      "MonthMetadata": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "forecast_count": {
+            "type": "integer",
+            "title": "Forecast Count"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Countries"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "forecast_count",
+          "countries"
+        ],
+        "title": "MonthMetadata"
+      },
+      "MonthsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/MonthMetadata"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "count"
+        ],
+        "title": "MonthsResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "forecasts",
+      "description": "Retrieve conflict forecast data"
+    },
+    {
+      "name": "metadata",
+      "description": "Get available months and grid cells"
+    },
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    }
+  ]
+}
