@@ -3,6 +3,8 @@ from fastapi.testclient import TestClient
 from app.api.dependencies import verify_api_key
 from app.main import app
 
+COUNTRY_CODE = "800"
+
 client = TestClient(app)
 
 # Bypass API key checks during tests
@@ -49,14 +51,14 @@ def test_get_forecasts():
 
 def test_get_forecasts_with_country_filter():
     """Test getting forecasts with country filter"""
-    response = client.get("/api/v1/forecasts?country=UGA")
+    response = client.get(f"/api/v1/forecasts?country={COUNTRY_CODE}")
     assert response.status_code == 200
     data = response.json()
     assert "data" in data
     if data["count"] > 0:
         # Check that all forecasts are from Uganda
         for forecast in data["data"]:
-            assert forecast["country_id"] == "UGA"
+            assert forecast["country_id"] == COUNTRY_CODE
 
 
 def test_get_forecasts_with_month_filter():
@@ -129,14 +131,14 @@ def test_get_grid_cells():
 
 def test_get_grid_cells_with_country_filter():
     """Test getting grid cells with country filter"""
-    response = client.get("/api/v1/metadata/grid-cells?country=UGA")
+    response = client.get(f"/api/v1/metadata/grid-cells?country={COUNTRY_CODE}")
     assert response.status_code == 200
     data = response.json()
     assert "data" in data
     if data["count"] > 0:
         # Check that all cells are from Uganda
         for cell in data["data"]:
-            assert cell["country_id"] == "UGA"
+            assert cell["country_id"] == COUNTRY_CODE
 
 
 def test_get_countries():
@@ -151,7 +153,7 @@ def test_get_countries():
 
 def test_invalid_country_code():
     """Test validation of invalid country code"""
-    response = client.get("/api/v1/forecasts?country=US")  # Too short
+    response = client.get("/api/v1/forecasts?country=12")  # Too short
     assert response.status_code == 400
 
 

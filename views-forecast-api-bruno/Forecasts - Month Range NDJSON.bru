@@ -1,17 +1,17 @@
 meta {
   name: Forecasts - Month Range NDJSON
   type: http
-  seq: 5
+  seq: 2
 }
 
 get {
-  url: http://localhost:8000/api/v1/forecasts?country=ARG&month_range=2025-08:2025-12&metrics=map&metrics=prob_100&format=ndjson
+  url: http://localhost:8000/api/v1/forecasts?country=074&month_range=2025-08:2025-12&metrics=map&metrics=prob_100&format=ndjson
   body: none
   auth: apikey
 }
 
 params:query {
-  country: ARG
+  country: 074
   month_range: 2025-08:2025-12
   metrics: map
   metrics: prob_100
@@ -20,7 +20,7 @@ params:query {
 
 auth:apikey {
   key: X-API-Key
-  value: optional-api-key-for-production
+  value: your-local-api-key
   placement: header
 }
 

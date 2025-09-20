@@ -1,3 +1,5 @@
+PYTHON ?= python
+
 .PHONY: help install run dev test lint format clean docker-build docker-run
 
 help:
@@ -13,16 +15,17 @@ help:
 	@echo "  make docker-run  - Run Docker container"
 
 install:
-	pip install -r requirements.txt
+	$(PYTHON) -m pip install -r requirements.txt
 
 run:
-	python -m app.main
+	$(PYTHON) -m app.main
 
 dev:
-	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	$(PYTHON) scripts/bootstrap_local_data.py
+	$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
-	pytest tests/ -v --cov=app --cov-report=term-missing
+	$(PYTHON) -m pytest tests/ -v --cov=app --cov-report=term-missing
 
 lint:
 	ruff check app/ tests/

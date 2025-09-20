@@ -54,7 +54,7 @@
           "forecasts"
         ],
         "summary": "Get Forecasts",
-        "description": "Retrieve conflict forecasts with optional filtering.\n\n## Query Parameters\n\n- **country**: ISO 3166-1 alpha-3 country code (e.g., \"UGA\", \"KEN\")\n- **grid_ids**: List of grid cell IDs (can be repeated: ?grid_ids=1&grid_ids=2)\n- **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)\n- **month_range**: Range of months (e.g., \"2024-01:2024-06\")\n- **metrics**: Specific metrics to include (if not specified, returns all 13 metrics)\n- **format**: Response format (\"json\" or \"ndjson\" for streaming)\n\n## Available Metrics\n\n- map: Most Accurate Prediction\n- ci_50_low, ci_50_high: 50% confidence interval\n- ci_90_low, ci_90_high: 90% confidence interval\n- ci_99_low, ci_99_high: 99% confidence interval\n- prob_0: Probability of 0 fatalities\n- prob_1: Probability of 1+ fatalities\n- prob_10: Probability of 10+ fatalities\n- prob_100: Probability of 100+ fatalities\n- prob_1000: Probability of 1000+ fatalities\n- prob_10000: Probability of 10000+ fatalities\n\n## Examples\n\nGet all forecasts for Uganda in January 2024:\n```\nGET /api/v1/forecasts?country=UGA&months=2024-01\n```\n\nGet specific metrics for a grid cell range over 6 months:\n```\nGET /api/v1/forecasts?grid_ids=1&grid_ids=2&month_range=2024-01:2024-06&metrics=map&metrics=ci_90_low&metrics=ci_90_high\n```",
+        "description": "Retrieve conflict forecasts with optional filtering.\n\n## Query Parameters\n\n- **country**: UN M49 numeric country code (e.g., \"800\", \"404\")\n- **grid_ids**: List of grid cell IDs (can be repeated: ?grid_ids=1&grid_ids=2)\n- **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)\n- **month_range**: Range of months (e.g., \"2024-01:2024-06\")\n- **metrics**: Specific metrics to include (if not specified, returns all 13 metrics)\n- **format**: Response format (\"json\" or \"ndjson\" for streaming)\n\n## Available Metrics\n\n- map: Most Accurate Prediction\n- ci_50_low, ci_50_high: 50% confidence interval\n- ci_90_low, ci_90_high: 90% confidence interval\n- ci_99_low, ci_99_high: 99% confidence interval\n- prob_0: Probability of 0 fatalities\n- prob_1: Probability of 1+ fatalities\n- prob_10: Probability of 10+ fatalities\n- prob_100: Probability of 100+ fatalities\n- prob_1000: Probability of 1000+ fatalities\n- prob_10000: Probability of 10000+ fatalities\n\n## Examples\n\nGet all forecasts for Uganda in January 2024:\n```\nGET /api/v1/forecasts?country=800&months=2024-01\n```\n\nGet specific metrics for a grid cell range over 6 months:\n```\nGET /api/v1/forecasts?grid_ids=1&grid_ids=2&month_range=2024-01:2024-06&metrics=map&metrics=ci_90_low&metrics=ci_90_high\n```",
         "operationId": "get_forecasts_api_v1_forecasts_get",
         "parameters": [
           {
@@ -70,10 +70,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter by country code (ISO 3166-1 alpha-3)",
+              "description": "Filter by country code (UN M49 numeric, zero-padded to 3 digits)",
               "title": "Country"
             },
-            "description": "Filter by country code (ISO 3166-1 alpha-3)"
+            "description": "Filter by country code (UN M49 numeric, zero-padded to 3 digits)"
           },
           {
             "name": "grid_ids",
@@ -407,10 +407,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Filter by country code (ISO 3166-1 alpha-3)",
+              "description": "Filter by country code (UN M49 numeric, zero-padded to 3 digits)",
               "title": "Country"
             },
-            "description": "Filter by country code (ISO 3166-1 alpha-3)"
+            "description": "Filter by country code (UN M49 numeric, zero-padded to 3 digits)"
           },
           {
             "name": "x-api-key",
@@ -756,7 +756,7 @@
           "country_id": {
             "type": "string",
             "title": "Country Id",
-            "description": "ISO 3166-1 alpha-3 country code"
+            "description": "UN M49 numeric country code"
           },
           "admin_1_id": {
             "anyOf": [

@@ -76,7 +76,7 @@ def test_grid_cell_forecast():
         grid_id=1,
         latitude=0.5,
         longitude=32.5,
-        country_id="UGA",
+        country_id="800",
         month="2024-01",
         metrics=ForecastMetrics(
             map=10.5,
@@ -95,7 +95,7 @@ def test_grid_cell_forecast():
         ),
     )
     assert forecast.grid_id == 1
-    assert forecast.country_id == "UGA"
+    assert forecast.country_id == "800"
     assert forecast.admin_1_id is None
 
 
@@ -103,11 +103,11 @@ def test_forecast_query_validation():
     """Test ForecastQuery validation"""
     # Valid query
     query = ForecastQuery(
-        country="UGA",
+        country="800",
         months=["2024-01", "2024-02"],
         metrics=[MetricName.map, MetricName.ci_90_low, MetricName.ci_90_high],
     )
-    assert query.country == "UGA"
+    assert query.country == "800"
     assert len(query.months) == 2
     assert query.metrics == [
         MetricName.map.value,
@@ -115,13 +115,13 @@ def test_forecast_query_validation():
         MetricName.ci_90_high.value,
     ]
 
-    # Test country code validation
-    query = ForecastQuery(country="uga")
-    assert query.country == "UGA"  # Should be uppercase
+    # Test country code validation preserves zero-padded digits
+    query = ForecastQuery(country="800")
+    assert query.country == "800"
 
     # Invalid country code length
     with pytest.raises(ValidationError):
-        ForecastQuery(country="US")  # Too short
+        ForecastQuery(country="12")  # Too short
 
     # Invalid month format
     with pytest.raises(ValidationError):

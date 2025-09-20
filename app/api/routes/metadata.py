@@ -41,7 +41,9 @@ async def get_available_months(_: bool = Depends(verify_api_key)):
 
 @router.get("/grid-cells", response_model=GridCellsResponse)
 async def get_grid_cells(
-    country: Optional[str] = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
+    country: Optional[str] = Query(
+        None, description="Filter by country code (UN M49 numeric, zero-padded to 3 digits)"
+    ),
     _: bool = Depends(verify_api_key),
 ):
     """
