@@ -25,13 +25,6 @@
 
 3. Use the shared sandbox AWS credentials (temporary demo READ access to the bucket):
 
-   ```bash
-   export AWS_ACCESS_KEY_ID=AKIAVRUVRCKVGAMY5VNV
-   export AWS_SECRET_ACCESS_KEY=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
-   ```
-
-   > These credentials are intentionally public for now so everyone can pull the actual VIEWS S3 drop. Also there is fallback to sample_data if not working anymore
-
 4. Hydrate the local SQLite database and start the API:
 
    ```bash

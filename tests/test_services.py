@@ -1,6 +1,8 @@
 import pytest
 
+from app.core.config import settings
 from app.models.forecast import ForecastQuery, MetricName
+from app.services.data_loader import DataLoader
 from app.services.forecast_service import ForecastService
 
 
@@ -79,3 +81,35 @@ def test_get_forecast_summary():
         assert len(summary["countries"]) > 0
         assert len(summary["months"]) > 0
         assert summary["grid_cells"] > 0
+
+
+def test_data_loader_falls_back_when_credentials_missing(monkeypatch, tmp_path):
+    """Cloud backend should fall back to sample data if AWS credentials are blank."""
+
+    monkeypatch.setattr(settings, "data_backend", "cloud", raising=False)
+    monkeypatch.setattr(settings, "use_local_data", False, raising=False)
+    monkeypatch.setattr(settings, "aws_access_key_id", "", raising=False)
+    monkeypatch.setattr(settings, "aws_secret_access_key", "", raising=False)
+    monkeypatch.setattr(settings, "data_path", str(tmp_path), raising=False)
+
+    loader = DataLoader()
+
+    assert loader.backend == "parquet"
+    assert (tmp_path / "sample_data.parquet").exists()
+    assert loader.get_forecasts(), "Sample data should provide forecast rows"
+
+
+def test_data_loader_falls_back_when_use_local_data(monkeypatch, tmp_path):
+    """USE_LOCAL_DATA=true should force sample data usage even for cloud backend."""
+
+    monkeypatch.setattr(settings, "data_backend", "cloud", raising=False)
+    monkeypatch.setattr(settings, "use_local_data", True, raising=False)
+    monkeypatch.setattr(settings, "aws_access_key_id", "key", raising=False)
+    monkeypatch.setattr(settings, "aws_secret_access_key", "secret", raising=False)
+    monkeypatch.setattr(settings, "data_path", str(tmp_path), raising=False)
+
+    loader = DataLoader()
+
+    assert loader.backend == "parquet"
+    assert (tmp_path / "sample_data.parquet").exists()
+    assert loader.get_forecasts(), "Sample data should provide forecast rows"

@@ -55,6 +55,14 @@ class DataLoader:
         self._s3_client = None
         self._db_path: Optional[Path] = None
 
+        if self.backend == "cloud" and self._should_use_sample_backend():
+            logger.warning(
+                "Falling back to sample data because USE_LOCAL_DATA is true or AWS credentials are missing."
+            )
+            self.backend = "parquet"
+            self._ensure_local_data_exists()
+            ensure_local_data_ready(prompt_user=False)
+
         if self.backend == "parquet":
             self._ensure_local_data_exists()
         elif self.backend == "database":
@@ -63,6 +71,31 @@ class DataLoader:
             self._init_cloud_storage()
         else:  # pragma: no cover - guard for unexpected configuration
             raise ValueError(f"Unsupported data backend: {self.backend}")
+
+    @staticmethod
+    def _is_blank(value: Optional[str]) -> bool:
+        """Return True when a string value is None or empty after stripping."""
+
+        if value is None:
+            return True
+
+        if isinstance(value, str) and not value.strip():
+            return True
+
+        return False
+
+    def _should_use_sample_backend(self) -> bool:
+        """Determine whether to bypass the cloud backend and use samples instead."""
+
+        if settings.use_local_data:
+            return True
+
+        if self._is_blank(settings.aws_access_key_id) or self._is_blank(
+            settings.aws_secret_access_key
+        ):
+            return True
+
+        return False
 
     def _ensure_local_data_exists(self):
         """Ensure local data directory exists."""
