@@ -18,6 +18,7 @@ class MetricName(str, Enum):
     Defines all supported metrics for conflict forecasts, including
     point estimates (MAP), confidence intervals, and exceedance probabilities.
     """
+
     map = "map"
     ci_50_low = "ci_50_low"
     ci_50_high = "ci_50_high"
@@ -139,6 +140,7 @@ class GridCellForecast(BaseModel):
         month: Forecast month in YYYY-MM format.
         metrics: Forecast metrics for this grid cell.
     """
+
     grid_id: int = Field(..., description="Unique grid cell identifier")
     latitude: float = Field(..., ge=-90, le=90, description="Grid cell center latitude")
     longitude: float = Field(..., ge=-180, le=180, description="Grid cell center longitude")
@@ -165,6 +167,7 @@ class ForecastQuery(BaseModel):
         metrics: Optional list of specific metrics to return.
         format: Response format (json or ndjson).
     """
+
     model_config = ConfigDict(use_enum_values=True)
 
     country: Optional[str] = Field(
@@ -282,6 +285,7 @@ class GridCellMetadata(BaseModel):
         admin_1_id: First-level administrative division.
         admin_2_id: Second-level administrative division.
     """
+
     grid_id: int
     latitude: float
     longitude: float
@@ -300,6 +304,7 @@ class MonthMetadata(BaseModel):
         forecast_count: Number of forecasts available for this month.
         countries: List of country codes with data for this month.
     """
+
     month: str
     forecast_count: int
     countries: List[str]

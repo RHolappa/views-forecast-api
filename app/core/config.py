@@ -41,6 +41,7 @@ class Settings(BaseSettings):
         database_url: Database connection URL.
         log_level: Logging verbosity level.
     """
+
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False
     )

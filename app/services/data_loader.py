@@ -45,6 +45,7 @@ class DataLoader:
         _s3_client: AWS S3 client for cloud storage access.
         _db_path: Path to SQLite database file.
     """
+
     def __init__(self):
         """Initialize data loader with configured backend."""
         self.cache = TTLCache(maxsize=settings.cache_max_size, ttl=settings.cache_ttl_seconds)

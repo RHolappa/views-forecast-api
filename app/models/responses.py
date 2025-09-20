@@ -23,6 +23,7 @@ class ForecastResponse(BaseModel):
         count: Total number of forecasts returned.
         query: Original query parameters for reference.
     """
+
     data: List[GridCellForecast]
     count: int = Field(..., description="Total number of forecasts returned")
     query: Dict[str, Any] = Field(..., description="Query parameters used")
@@ -39,6 +40,7 @@ class GridCellsResponse(BaseModel):
         count: Total number of grid cells returned.
         countries: Optional list of unique country codes in the response.
     """
+
     data: List[GridCellMetadata]
     count: int
     countries: Optional[List[str]] = None
@@ -54,6 +56,7 @@ class MonthsResponse(BaseModel):
         data: List of month metadata records.
         count: Total number of months with available data.
     """
+
     data: List[MonthMetadata]
     count: int
 
@@ -69,6 +72,7 @@ class HealthResponse(BaseModel):
         version: API version number.
         environment: Current deployment environment.
     """
+
     status: str = "healthy"
     version: str = "1.0.0"
     environment: str
@@ -85,6 +89,7 @@ class ErrorResponse(BaseModel):
         detail: Optional detailed error information.
         status_code: HTTP status code of the error.
     """
+
     error: str
     detail: Optional[str] = None
     status_code: int

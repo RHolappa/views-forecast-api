@@ -25,6 +25,7 @@ class ForecastService:
     Attributes:
         data_loader: Instance of DataLoader for accessing forecast data.
     """
+
     def __init__(self):
         """Initialize the forecast service with data loader."""
         self.data_loader = data_loader
@@ -132,7 +133,7 @@ class ForecastService:
 
         Returns:
             Dictionary containing forecast data with only requested metrics.
-        """""
+        """
         result = {
             "grid_id": forecast.grid_id,
             "latitude": forecast.latitude,

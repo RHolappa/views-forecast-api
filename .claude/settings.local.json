@@ -17,7 +17,9 @@
       "Bash(venv/bin/python -m black:*)",
       "Bash(venv/bin/python -m isort:*)",
       "Bash(venv/bin/python:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(ruff check:*)",
+      "Bash(black:*)"
     ],
     "deny": [],
     "ask": []

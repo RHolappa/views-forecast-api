@@ -43,66 +43,6 @@
 
 The API will be available at `http://localhost:8000`
 
-## Working with Official VIEWS Forecast Drops
-
-For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_data.py`) to accept the prompt that generates a synthetic `sample_data.parquet` in the correct schema. (Pandera used)
-
-1. **Import** – download the raw parquet pair from VIEWS for example: (`preds_001.parquet` and `preds_001_90_hdi.parquet`) and drop them under `data/views_raw/<year>/<month>/`. The repository ships an example in `data/views_raw/2025/07/`.
-2. **Prepare** – convert the draws into the API schema. The script reads the raw parquets only, expands the forecast draws into summary statistics, and validates the output with Pandera before writing the parquet:
-
-   ```bash
-   venv/bin/python scripts/prepare_views_forecasts.py \
-     --preds-parquet data/views_raw/2025/07/preds_001.parquet \
-     --hdi-parquet   data/views_raw/2025/07/preds_001_90_hdi.parquet \
-     --output        data/views_parquet/2025/07/api_ready/forecasts.parquet \
-     --overwrite
-   ```
-
-   The resulting parquet stores int32 grid identifiers, zero-padded country codes, and float32 metrics/probabilities so the API loader can stream the data efficiently.
-3. **Hydrate SQLite (automatic)** – `make dev` now populates `data/forecasts.db` by downloading the latest parquet drop from `s3://views-data/api_ready/`. The loader accepts both API-ready parquets *and* the raw `preds_*.parquet` + `preds_*_90_hdi.parquet` pair; raw files are converted on the fly. If you need to refresh manually or target a different month, run:
-
-   ```bash
-   make db-clean                 # optional: wipe the previous database
-   make db-load RESET_DB=1       # auto-downloads using CLOUD_* settings
-   ```
-
-   Passing `S3` flags lets you override the defaults or point at alternative buckets:
-
-   ```bash
-   make db-load DB_URL=sqlite:///data/forecasts.db \
-     S3_BUCKET=views-data \
-     S3_PREFIX=api_ready/2025/07
-   ```
-
-   (Under the hood the target forwards variables to `scripts/load_parquet_to_db.py`; see `python scripts/load_parquet_to_db.py --help` for the full matrix.) The command validates the parquet schema, writes to `DATABASE_URL` (defaults to `sqlite:///data/forecasts.db`), and skips reloading when the database already contains rows. The database directory is created automatically.
-
-4. **Use** – copy `.env.example` to `.env` (if you haven’t already) and confirm the database settings:
-
-   ```env
-   USE_LOCAL_DATA=false
-   DATA_BACKEND=database
-   DATABASE_URL=sqlite:///data/forecasts.db
-   API_KEY=your-local-api-key
-   ```
-
-   Restart `make dev` after any change so the loader drops its cache.
-5. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
-
-   ```bash
-   curl -H "X-API-Key: your-local-api-key" \
-        "http://localhost:8000/api/v1/forecasts?country=074&months=2025-08"
-   ```
-
-   The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
-6. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
-
-   ```bash
-   venv/bin/python - <<'PY'
-   from app.services.data_loader import data_loader
-   data_loader.cache.clear()
-   PY
-   ```
-
 ## API Capabilities
 
 Make sure you have the X-API-Key header used based on the env file
@@ -157,27 +97,9 @@ or:
 curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074"
 ```
 
-Each forecast row includes `grid_id`, centroid latitude/longitude, the UN M49 `country_id`, and optional `admin_1_id` and `admin_2_id` fields.
-
-#### Get Available Months
-
-```bash
-GET /api/v1/metadata/months
-```
-
-Returns all months with available forecast data.
-
-#### Get Grid Cells
-
-```bash
-GET /api/v1/metadata/grid-cells?country=074
-```
-
-Returns grid cells, optionally filtered by country. Each record includes the grid ID, centroid lat/lon, the UN M49 country code, and admin identifiers when available.
-
 ## Data Storage
 
-The API supports two data storage modes:
+The API supports these data storage modes:
 
 ### Local Data (Development)
 
@@ -252,31 +174,6 @@ make docker-run
 ```bash
 docker-compose up -d
 ```
-
-## Production Deployment
-
-### Health Checks
-
-- `/health` - Basic health check
-- `/ready` - Readiness probe for orchestration
-
-### Scaling Considerations
-
-1. **Horizontal Scaling**: The API is stateless and can be scaled horizontally behind a load balancer
-2. **Caching**: Configure cache size based on available memory
-3. **Data Storage**: Use cloud storage (S3/GCS) for production data
-4. **Monitoring**: Integrate with APM tools using OpenTelemetry
-
-## Future Enhancements
-
-The API is designed to easily support:
-
-- Aggregation endpoints for regional summaries
-- Administrative boundary queries
-- Time series analysis endpoints
-- Webhook notifications for new data
-- GraphQL interface
-- Real-time WebSocket updates
 
 ## License
 

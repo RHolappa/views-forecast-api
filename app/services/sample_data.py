@@ -79,6 +79,7 @@ class SampleConfig:
         grids_per_country: Number of grid cells to generate per country.
         seed: Random seed for reproducible data generation.
     """
+
     # Default UN M49 numeric country codes (zero-padded to 3 digits)
     countries: Sequence[str] = ("074", "108", "404", "454", "800", "834")
     months: Iterable[str] = tuple(pd.period_range("2024-01", periods=6, freq="M").astype(str))
