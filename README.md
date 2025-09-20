@@ -140,9 +140,10 @@ The API supports two data storage modes:
 - You can manually regenerate the sample dataset at any time with `python scripts/bootstrap_local_data.py`.
 
 ### Cloud Storage (Production)
-- Configure cloud credentials in `.env`
 - Set `USE_LOCAL_DATA=false`
-- Supports AWS S3, Google Cloud Storage, Azure Blob Storage
+- Configure S3 credentials in `.env` using `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or rely on the default credential chain inside your deployment environment).
+- Point `CLOUD_BUCKET_NAME` at the bucket that stores parquet files and use either `CLOUD_DATA_KEY` for a single parquet object (for example `api_ready/forecasts.parquet`) or `CLOUD_DATA_PREFIX` to load every parquet under a folder.
+- The loader downloads parquet objects directly from S3 using `boto3`; ensure the IAM role or user has `s3:ListBucket` and `s3:GetObject` permissions for the configured bucket.
 
 ## Development
 

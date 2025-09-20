@@ -31,6 +31,12 @@ class Settings(BaseSettings):
         default=None, description="Cloud bucket name for data storage"
     )
     cloud_bucket_region: str = Field(default="us-east-1", description="AWS region")
+    cloud_data_prefix: Optional[str] = Field(
+        default="api_ready/", description="Prefix within the cloud bucket for forecast data"
+    )
+    cloud_data_key: Optional[str] = Field(
+        default=None, description="Specific object key to load from the cloud bucket"
+    )
     aws_access_key_id: Optional[str] = Field(default=None, description="AWS access key")
     aws_secret_access_key: Optional[str] = Field(default=None, description="AWS secret key")
 

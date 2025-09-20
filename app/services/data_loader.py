@@ -1,9 +1,17 @@
+import io
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
 from cachetools import TTLCache
+
+try:
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+except ModuleNotFoundError:  # pragma: no cover - boto3 optional for local workflows
+    boto3 = None
+    BotoCoreError = ClientError = Exception
 
 from app.core.config import settings
 from app.models.forecast import ALL_METRIC_NAMES, ForecastMetrics, GridCellForecast, MetricName
@@ -18,6 +26,7 @@ class DataLoader:
         self.cache = TTLCache(maxsize=settings.cache_max_size, ttl=settings.cache_ttl_seconds)
         self.data_path = Path(settings.data_path)
         self._data: Optional[pd.DataFrame] = None
+        self._s3_client = None
 
         if settings.use_local_data:
             self._ensure_local_data_exists()
@@ -30,9 +39,22 @@ class DataLoader:
 
     def _init_cloud_storage(self):
         """Initialize cloud storage connection"""
-        # TODO: Implement cloud storage connection
-        # This would use boto3 for S3 or appropriate client for other cloud providers
-        pass
+        if not boto3:
+            raise ImportError(
+                "boto3 is required for cloud data loading but is not installed. "
+                "Install dependencies with `make install` after updating requirements."
+            )
+
+        if not settings.cloud_bucket_name:
+            raise ValueError("CLOUD_BUCKET_NAME must be set when USE_LOCAL_DATA=false")
+
+        session = boto3.session.Session(
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
+            region_name=settings.cloud_bucket_region,
+        )
+
+        self._s3_client = session.client("s3")
 
     def _load_data(self) -> pd.DataFrame:
         """Load data from storage (local or cloud)"""
@@ -80,10 +102,74 @@ class DataLoader:
 
     def _load_cloud_data(self) -> pd.DataFrame:
         """Load data from cloud storage"""
-        # TODO: Implement cloud data loading
-        # This would download parquet files from S3/GCS/Azure
-        logger.warning("Cloud data loading not yet implemented, using sample data")
-        return self._create_sample_data()
+        if not self._s3_client:
+            logger.error("S3 client is not initialized; falling back to sample data")
+            return self._create_sample_data()
+
+        bucket = settings.cloud_bucket_name
+        object_keys = self._resolve_object_keys(bucket)
+
+        if not object_keys:
+            logger.warning(
+                "No parquet objects found in bucket %s with prefix '%s'",
+                bucket,
+                settings.cloud_data_prefix,
+            )
+            return self._create_sample_data()
+
+        dfs = []
+        for key in object_keys:
+            try:
+                buffer = io.BytesIO()
+                self._s3_client.download_fileobj(bucket, key, buffer)
+                buffer.seek(0)
+                dfs.append(pd.read_parquet(buffer))
+                logger.info("Loaded %s from s3://%s/%s", key, bucket, key)
+            except (ClientError, BotoCoreError) as exc:
+                logger.error("Failed to download %s from bucket %s: %s", key, bucket, exc)
+            except Exception as exc:  # pragma: no cover - defensive guard
+                logger.error("Failed to parse parquet %s in bucket %s: %s", key, bucket, exc)
+
+        if not dfs:
+            logger.error("Unable to load any parquet objects; returning sample data")
+            return self._create_sample_data()
+
+        return pd.concat(dfs, ignore_index=True)
+
+    def _resolve_object_keys(self, bucket: str) -> List[str]:
+        """Collect parquet object keys based on configuration."""
+        if settings.cloud_data_key:
+            return [settings.cloud_data_key]
+
+        prefix = settings.cloud_data_prefix.strip("/") if settings.cloud_data_prefix else ""
+        if prefix and not prefix.endswith("/"):
+            prefix = f"{prefix}/"
+
+        continuation_token = None
+        keys: List[str] = []
+
+        while True:
+            try:
+                list_kwargs = {"Bucket": bucket, "Prefix": prefix}
+                if continuation_token:
+                    list_kwargs["ContinuationToken"] = continuation_token
+
+                response = self._s3_client.list_objects_v2(**list_kwargs)
+            except (ClientError, BotoCoreError) as exc:
+                logger.error("Failed to list objects in bucket %s: %s", bucket, exc)
+                return []
+
+            for obj in response.get("Contents", []):
+                key = obj.get("Key")
+                if key and key.endswith(".parquet"):
+                    keys.append(key)
+
+            if response.get("IsTruncated"):
+                continuation_token = response.get("NextContinuationToken")
+            else:
+                break
+
+        return keys
 
     def _create_sample_data(self) -> pd.DataFrame:
         """Create sample data for testing"""
