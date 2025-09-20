@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     cloud_bucket_name: Optional[str] = Field(
         default=None, description="Cloud bucket name for data storage"
     )
-    cloud_bucket_region: str = Field(default="us-east-1", description="AWS region")
+    cloud_bucket_region: str = Field(default="eu-north-1", description="AWS region")
     cloud_data_prefix: Optional[str] = Field(
         default="api_ready/", description="Prefix within the cloud bucket for forecast data"
     )
@@ -49,7 +49,15 @@ class Settings(BaseSettings):
 
     # Data Configuration
     data_path: str = Field(default="data/sample", description="Path to local data")
-    use_local_data: bool = Field(default=True, description="Use local data instead of cloud")
+    use_local_data: bool = Field(default=False, description="Use local data instead of cloud")
+    data_backend: Literal["parquet", "database", "cloud"] = Field(
+        default="database",
+        description="Storage backend for forecasts",
+    )
+    database_url: str = Field(
+        default="sqlite:///data/forecasts.db",
+        description="Database URL used when DATA_BACKEND=database",
+    )
 
     # Logging
     log_level: str = Field(default="INFO", description="Logging level")
@@ -63,6 +71,19 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 return [v]
         return v
+
+    @field_validator("data_backend", mode="before")
+    @classmethod
+    def normalize_data_backend(cls, v, values):
+        if isinstance(v, str) and v:
+            return v.lower()
+
+        # Fall back to legacy USE_LOCAL_DATA toggle when DATA_BACKEND is unset
+        use_local = values.get("use_local_data")
+        if use_local is False:
+            return "cloud"
+
+        return "parquet"
 
     @field_validator("environment")
     @classmethod

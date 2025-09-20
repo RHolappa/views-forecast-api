@@ -1,6 +1,6 @@
 PYTHON ?= python
 
-.PHONY: help install run dev test lint format clean docker-build docker-run
+.PHONY: help install run dev test lint format clean docker-build docker-run db-load db-clean
 
 help:
 	@echo "Available commands:"
@@ -13,6 +13,8 @@ help:
 	@echo "  make clean      - Clean cache and temporary files"
 	@echo "  make docker-build - Build Docker image"
 	@echo "  make docker-run  - Run Docker container"
+	@echo "  make db-load     - Load parquet data into SQLite"
+	@echo "  make db-clean    - Remove the SQLite database file"
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt
@@ -21,7 +23,12 @@ run:
 	$(PYTHON) -m app.main
 
 dev:
-	$(PYTHON) scripts/bootstrap_local_data.py
+	@DATA_BACKEND=$$($(PYTHON) -c "from app.core.config import settings; print(settings.data_backend)"); \
+	if [ "$$DATA_BACKEND" = "database" ]; then \
+		$(PYTHON) scripts/load_parquet_to_db.py --skip-if-exists; \
+	else \
+		$(PYTHON) scripts/bootstrap_local_data.py; \
+	fi
 	$(PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
@@ -46,3 +53,29 @@ docker-build:
 
 docker-run:
 	docker run -p 8000:8000 --env-file .env views-forecast-api:latest
+
+db-load:
+	$(PYTHON) scripts/load_parquet_to_db.py \
+		$(if $(SOURCE),--source "$(SOURCE)",) \
+		$(if $(DB_URL),--database-url "$(DB_URL)",) \
+		$(if $(MODE),--mode "$(MODE)",) \
+		$(if $(SKIP_IF_EXISTS),--skip-if-exists,) \
+		$(if $(RESET_DB),--reset-db,) \
+		$(if $(S3_BUCKET),--s3-bucket "$(S3_BUCKET)",) \
+		$(if $(S3_PREFIX),--s3-prefix "$(S3_PREFIX)",) \
+		$(foreach key,$(S3_KEYS),--s3-key "$(key)" )
+
+db-clean:
+	@printf '%s\n' \
+		"import os" \
+		"from app.core.config import settings" \
+		"from app.services.db_utils import sqlite_path_from_url" \
+		"" \
+		"db_url = os.environ.get('DB_URL') or settings.database_url" \
+		"path = sqlite_path_from_url(db_url)" \
+		"if path.exists():" \
+		"    path.unlink()" \
+		"    print(f'Removed SQLite database at {path}')" \
+		"else:" \
+		"    print(f'No SQLite database found at {path}')" \
+		| $(PYTHON)

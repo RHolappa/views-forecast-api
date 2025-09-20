@@ -33,7 +33,7 @@ cp .env.example .env
 
 ```bash
 make dev  # Development mode with auto-reload
-          # This will create sample data if not found 
+          # Downloads the default parquet drop from S3 and hydrates SQLite
 # or
 make run  # Production mode
 ```
@@ -56,16 +56,34 @@ For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_
    ```
 
    The resulting parquet stores int32 grid identifiers, zero-padded country codes, and float32 metrics/probabilities so the API loader can stream the data efficiently.
-3. **Use** – point the API at the converted data by copying `.env.example` to `.env` (if you haven’t already) and set:
+3. **Hydrate SQLite (automatic)** – `make dev` now populates `data/forecasts.db` by downloading the latest parquet drop from `s3://views-data/api_ready/`. The loader accepts both API-ready parquets *and* the raw `preds_*.parquet` + `preds_*_90_hdi.parquet` pair; raw files are converted on the fly. If you need to refresh manually or target a different month, run:
+
+   ```bash
+   make db-clean                 # optional: wipe the previous database
+   make db-load RESET_DB=1       # auto-downloads using CLOUD_* settings
+   ```
+
+   Passing `S3` flags lets you override the defaults or point at alternative buckets:
+
+   ```bash
+   make db-load DB_URL=sqlite:///data/forecasts.db \
+     S3_BUCKET=views-data \
+     S3_PREFIX=api_ready/2025/07
+   ```
+
+   (Under the hood the target forwards variables to `scripts/load_parquet_to_db.py`; see `python scripts/load_parquet_to_db.py --help` for the full matrix.) The command validates the parquet schema, writes to `DATABASE_URL` (defaults to `sqlite:///data/forecasts.db`), and skips reloading when the database already contains rows. The database directory is created automatically.
+
+4. **Use** – copy `.env.example` to `.env` (if you haven’t already) and confirm the database settings:
 
    ```env
-   USE_LOCAL_DATA=true
-   DATA_PATH=data/views_parquet/2025/07/api_ready
+   USE_LOCAL_DATA=false
+   DATA_BACKEND=database
+   DATABASE_URL=sqlite:///data/forecasts.db
    API_KEY=your-local-api-key
    ```
 
    Restart `make dev` after any change so the loader drops its cache.
-4. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
+5. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
 
    ```bash
    curl -H "X-API-Key: your-local-api-key" \
@@ -73,7 +91,7 @@ For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_
    ```
 
    The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
-5. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
+6. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
 
    ```bash
    venv/bin/python - <<'PY'
@@ -160,13 +178,26 @@ The API supports two data storage modes:
 
 ### Local Data (Development)
 
-- Set `USE_LOCAL_DATA=true` in `.env` (defaults to `true`) and point `DATA_PATH` at the folder that holds your parquet files (defaults to `data/sample`).
+- Set `USE_LOCAL_DATA=true` in `.env` (defaults to `false`) and point `DATA_PATH` at the folder that holds your parquet files (defaults to `data/sample`).
 - Run `make dev` – if no parquet files exist the task will offer to generate a synthetic dataset that mirrors the API schema (`sample_data.parquet` under `DATA_PATH`).
 - You can manually regenerate the sample dataset at any time with `python scripts/bootstrap_local_data.py`.
 
+### SQLite Database (Default for Local Runs)
+
+- `DATA_BACKEND=database` is the default; adjust `DATABASE_URL` if you want a custom path (defaults to `sqlite:///data/forecasts.db`).
+- `make dev` automatically downloads parquet files from `CLOUD_*` settings and hydrates the SQLite database the first time (or whenever the file is missing).
+- Load parquet files manually with `make db-load`:
+  - `SOURCE=/path/to/parquet` reads from disk.
+  - `S3_BUCKET=... S3_PREFIX=...` (or `S3_KEYS="key1 key2"`) downloads parquet objects from S3 first.
+  - `SKIP_IF_EXISTS=1` prevents re-importing when `forecasts` already has rows.
+  - `RESET_DB=1` removes the SQLite file before loading.
+  - `MODE=append` appends instead of replacing.
+- Use `make db-clean` (or `python scripts/load_parquet_to_db.py --reset-db`) when you want to remove the SQLite file and start fresh.
+- When refreshing data, re-run `make db-load MODE=replace` (default) or `MODE=append` depending on your workflow.
+
 ### Cloud Storage (Production)
 
-- Set `USE_LOCAL_DATA=false`
+- Set `USE_LOCAL_DATA=false` and/or `DATA_BACKEND=cloud`.
 - Configure S3 credentials in `.env` using `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or rely on the default credential chain inside your deployment environment).
 - Point `CLOUD_BUCKET_NAME` at the bucket that stores parquet files and use either `CLOUD_DATA_KEY` for a single parquet object (for example `api_ready/forecasts.parquet`) or `CLOUD_DATA_PREFIX` to load every parquet under a folder.
 - The loader downloads parquet objects directly from S3 using `boto3`; ensure the IAM role or user has `s3:ListBucket` and `s3:GetObject` permissions for the configured bucket.
