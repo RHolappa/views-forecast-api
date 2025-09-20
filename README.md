@@ -11,32 +11,35 @@
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/rholappa/views-forecast-api
-cd views-forecast-api
-```
+   ```bash
+   git clone https://github.com/rholappa/views-forecast-api
+   cd views-forecast-api
+   ```
 
-2. Install dependencies:
+2. Install dependencies and bootstrap the environment:
 
-```bash
-make install
-```
+   ```bash
+   make install
+   cp .env.example .env
+   ```
 
-3. Copy and configure environment variables:
+3. Use the shared sandbox AWS credentials (temporary demo access to the public bucket):
 
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+   ```bash
+   export AWS_ACCESS_KEY_ID=AKIAVRUVRCKVGAMY5VNV
+   export AWS_SECRET_ACCESS_KEY=KuscPWyOC8JPdWSmNN0Xc4kUgYAaT1YaErdu1jI8
+   ```
 
-4. Run the API:
+   > These credentials are intentionally public for now so everyone can pull the sample S3 drop. Replace them with your own before deploying anywhere sensitive.
 
-```bash
-make dev  # Development mode with auto-reload
-          # Downloads the default parquet drop from S3 and hydrates SQLite
-# or
-make run  # Production mode
-```
+4. Hydrate the local SQLite database and start the API:
+
+   ```bash
+   make db-load RESET_DB=1   # downloads & converts raw parquets into data/forecasts.db
+   make dev                  # API on http://localhost:8000
+   ```
+
+   Subsequent runs only need `make dev`; the loader skips re-importing when the DB already has rows.
 
 The API will be available at `http://localhost:8000`
 
@@ -198,7 +201,7 @@ The API supports two data storage modes:
 ### Cloud Storage (Production)
 
 - Set `USE_LOCAL_DATA=false` and/or `DATA_BACKEND=cloud`.
-- Configure S3 credentials in `.env` using `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or rely on the default credential chain inside your deployment environment).
+- Configure S3 credentials in `.env` using `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or rely on the default credential chain inside your deployment environment). For quick demos you can export the shared sandbox keys shown in the quick-start section.
 - Point `CLOUD_BUCKET_NAME` at the bucket that stores parquet files and use either `CLOUD_DATA_KEY` for a single parquet object (for example `api_ready/forecasts.parquet`) or `CLOUD_DATA_PREFIX` to load every parquet under a folder.
 - The loader downloads parquet objects directly from S3 using `boto3`; ensure the IAM role or user has `s3:ListBucket` and `s3:GetObject` permissions for the configured bucket.
 
