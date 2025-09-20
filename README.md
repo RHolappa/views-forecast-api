@@ -35,8 +35,8 @@
 4. Hydrate the local SQLite database and start the API:
 
    ```bash
-   make db-load RESET_DB=1   # downloads & converts raw parquets into data/forecasts.db
-   make dev                  # API on http://localhost:8000
+   make db-load      # downloads & converts raw parquets into data/forecasts.db use  RESET_DB=1 if old exists
+   make dev          # API on http://localhost:8000
    ```
 
    Subsequent runs only need `make dev`; the loader skips re-importing when the DB already has rows.
