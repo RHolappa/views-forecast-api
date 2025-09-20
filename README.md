@@ -61,7 +61,7 @@ For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_
 4. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
    ```bash
    curl -H "X-API-Key: your-local-api-key" \
-        "http://localhost:8000/api/v1/forecasts?country=MEX&months=2025-08"
+        "http://localhost:8000/api/v1/forecasts?country=074&months=2025-08"
    ```
    The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
 5. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
@@ -75,7 +75,7 @@ For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_
 ## API Capabilities
 Make sure you have the X-API-Key header used based on the env file
 - Metadata coverage: months and grid cells are exposed via `/api/v1/metadata/months` and `/api/v1/metadata/grid-cells`.
-- Country-wide retrieval: `GET /api/v1/forecasts?country=800` returns every grid cell in the country with the standard 13 metrics (UN M49 code `800` = Uganda).
+- Country-wide retrieval: `GET /api/v1/forecasts?country=074` returns every grid cell in the country with the standard 13 metrics (UN M49 code `074` = region example).
 - Targeted grid lookups: use `grid_ids` with one or many IDs to pull specific cells alongside other filters.
 - Temporal slicing: apply `months=YYYY-MM` or `month_range=YYYY-MM:YYYY-MM` to focus on single months or contiguous ranges.
 - Metric selection: repeat the `metrics` parameter (e.g., `metrics=map`) to limit the payload to the values you need.
@@ -102,7 +102,7 @@ GET /api/v1/forecasts
 ```
 
 Query parameters:
-- `country`: UN M49 numeric country code (zero-padded, e.g., `800` for Uganda)
+- `country`: UN M49 numeric country code (zero-padded, e.g., `074`)
 - `grid_ids`: List of grid cell IDs
 - `months`: Specific months (YYYY-MM format)
 - `month_range`: Range of months (YYYY-MM:YYYY-MM)
@@ -111,7 +111,7 @@ Query parameters:
 
 Example:
 ```bash
-curl "http://localhost:8000/api/v1/forecasts?country=800&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
+curl "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
 Each forecast row includes `grid_id`, centroid latitude/longitude, the UN M49 `country_id`, and optional `admin_1_id` and `admin_2_id` fields.
@@ -125,7 +125,7 @@ Returns all months with available forecast data.
 
 #### Get Grid Cells
 ```bash
-GET /api/v1/metadata/grid-cells?country=800
+GET /api/v1/metadata/grid-cells?country=074
 ```
 
 Returns grid cells, optionally filtered by country. Each record includes the grid ID, centroid lat/lon, the UN M49 country code, and admin identifiers when available.

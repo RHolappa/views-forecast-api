@@ -5,18 +5,18 @@ meta {
 }
 
 get {
-  url: http://localhost:8000/api/v1/metadata/grid-cells?country=404
+  url: http://localhost:8000/api/v1/metadata/grid-cells?country=074
   body: none
   auth: apikey
 }
 
 params:query {
-  country: 404
+  country: 074
 }
 
 auth:apikey {
   key: X-API-Key
-  value: optional-api-key-for-production
+  value: your-local-api-key
   placement: header
 }
 
