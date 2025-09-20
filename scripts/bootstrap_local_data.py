@@ -14,6 +14,11 @@ from app.services.data_initializer import ensure_local_data_ready
 
 
 def main() -> None:
+    """Entry point for bootstrapping local data.
+
+    Prompts the user and initializes local forecast data for development
+    and testing purposes.
+    """
     ensure_local_data_ready(prompt_user=True)
 
 

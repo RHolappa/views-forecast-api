@@ -16,7 +16,8 @@
       "Bash(venv/bin/python -m pip install:*)",
       "Bash(venv/bin/python -m black:*)",
       "Bash(venv/bin/python -m isort:*)",
-      "Bash(venv/bin/python:*)"
+      "Bash(venv/bin/python:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

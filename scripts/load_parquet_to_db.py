@@ -36,6 +36,14 @@ from scripts.prepare_views_forecasts import prepare_forecast_dataframe
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse command line arguments for database loading.
+
+    Args:
+        argv: Optional command line arguments (for testing).
+
+    Returns:
+        Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--source",
@@ -80,6 +88,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def collect_parquet_files(source_dir: Path) -> Iterable[Path]:
+    """Collect all parquet files from a directory.
+
+    Args:
+        source_dir: Directory to search for parquet files.
+
+    Returns:
+        Iterator of paths to parquet files.
+    """
     return sorted(source_dir.glob("*.parquet"))
 
 
@@ -89,6 +105,21 @@ def download_from_s3(
     prefix: Optional[str] = None,
     keys: Optional[Sequence[str]] = None,
 ) -> List[Path]:
+    """Download parquet files from S3 bucket.
+
+    Args:
+        bucket: S3 bucket name.
+        destination: Local directory to download files to.
+        prefix: Optional S3 prefix to filter objects.
+        keys: Optional list of specific S3 keys to download.
+
+    Returns:
+        List of paths to downloaded files.
+
+    Raises:
+        ImportError: If boto3 is not installed.
+        SystemExit: If download fails or no files are found.
+    """
     if not boto3:
         raise ImportError(
             "boto3 is required to download data from S3. Install dependencies with `make install`."
@@ -157,6 +188,14 @@ def download_from_s3(
 
 
 def load_parquet_frames(parquet_files: Iterable[Path]) -> pd.DataFrame:
+    """Load and validate parquet files into a DataFrame.
+
+    Args:
+        parquet_files: Paths to parquet files to load.
+
+    Returns:
+        Validated DataFrame with forecast data.
+    """
     df = build_forecast_dataframe(list(parquet_files))
     df = normalize_forecast_frame(df)
     df = FORECAST_SCHEMA.validate(df, lazy=True)
@@ -164,6 +203,21 @@ def load_parquet_frames(parquet_files: Iterable[Path]) -> pd.DataFrame:
 
 
 def build_forecast_dataframe(parquet_files: List[Path]) -> pd.DataFrame:
+    """Build consolidated forecast DataFrame from parquet files.
+
+    Automatically detects file format (API-ready or raw VIEWS) and
+    processes accordingly.
+
+    Args:
+        parquet_files: List of parquet file paths.
+
+    Returns:
+        Consolidated DataFrame with all forecast data.
+
+    Raises:
+        FileNotFoundError: If no parquet files provided.
+        SystemExit: If file format cannot be determined.
+    """
     if not parquet_files:
         raise FileNotFoundError("No parquet files found to load")
 
@@ -200,6 +254,17 @@ def build_forecast_dataframe(parquet_files: List[Path]) -> pd.DataFrame:
 
 
 def classify_parquet_file(path: Path) -> str:
+    """Classify parquet file type based on schema.
+
+    Args:
+        path: Path to parquet file.
+
+    Returns:
+        Classification string: 'api_ready', 'raw_preds', 'raw_hdi', or 'unknown'.
+
+    Raises:
+        SystemExit: If parquet schema cannot be read.
+    """
     try:
         schema = pq.read_schema(path)
     except Exception as exc:  # pragma: no cover - defensive
@@ -220,6 +285,14 @@ def classify_parquet_file(path: Path) -> str:
 
 
 def _raw_key(path: Path) -> str:
+    """Extract key from raw parquet filename for matching.
+
+    Args:
+        path: Path to parquet file.
+
+    Returns:
+        Base filename key without suffixes.
+    """
     stem = path.stem
     if stem.endswith("_90_hdi"):
         stem = stem[: -len("_90_hdi")]
@@ -227,7 +300,20 @@ def _raw_key(path: Path) -> str:
 
 
 def normalize_forecast_frame(df: pd.DataFrame) -> pd.DataFrame:
-    """Coerce known columns into the expected schema before validation."""
+    """Normalize country codes and other fields to expected format.
+
+    Coerces known columns into the expected schema before validation,
+    particularly handling country code normalization to UN M49 format.
+
+    Args:
+        df: Input DataFrame with forecast data.
+
+    Returns:
+        DataFrame with normalized column values.
+
+    Raises:
+        ValueError: If invalid country identifiers are encountered.
+    """
 
     if "country_id" in df.columns:
         # Normalize country identifiers to zero-padded UN M49 codes when numeric.
@@ -254,6 +340,14 @@ def normalize_forecast_frame(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def database_has_rows(conn: sqlite3.Connection) -> bool:
+    """Check if database contains forecast rows.
+
+    Args:
+        conn: SQLite database connection.
+
+    Returns:
+        True if forecasts table exists and contains data.
+    """
     try:
         cursor = conn.execute("SELECT 1 FROM forecasts LIMIT 1")
     except sqlite3.OperationalError:
@@ -263,6 +357,11 @@ def database_has_rows(conn: sqlite3.Connection) -> bool:
 
 
 def create_indexes(conn: sqlite3.Connection) -> None:
+    """Create database indexes for performance.
+
+    Args:
+        conn: SQLite database connection.
+    """
     indexes = (
         "CREATE INDEX IF NOT EXISTS idx_forecasts_month ON forecasts(month)",
         "CREATE INDEX IF NOT EXISTS idx_forecasts_country ON forecasts(country_id)",
@@ -274,6 +373,13 @@ def create_indexes(conn: sqlite3.Connection) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
+    """Main entry point for database loading script.
+
+    Loads forecast data from parquet files (local or S3) into SQLite database.
+
+    Args:
+        argv: Optional command line arguments.
+    """
     args = parse_args(argv)
 
     if args.source and (args.s3_key or args.s3_prefix or args.s3_bucket):

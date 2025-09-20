@@ -1,3 +1,10 @@
+"""Data loading service for forecast data from multiple backends.
+
+This module handles loading forecast data from various storage backends
+including SQLite databases, parquet files, and cloud storage (S3). It provides
+a unified interface for data access with caching support for performance.
+"""
+
 import io
 import logging
 import sqlite3
@@ -24,7 +31,22 @@ logger = logging.getLogger(__name__)
 
 
 class DataLoader:
+    """Main data loading class supporting multiple storage backends.
+
+    Provides unified data access for forecast data stored in SQLite databases,
+    parquet files, or cloud storage. Includes caching for performance optimization
+    and automatic initialization of the appropriate storage backend.
+
+    Attributes:
+        cache: TTL cache for storing loaded data.
+        data_path: Path to local data directory.
+        backend: Storage backend type (database/parquet/cloud).
+        _data: Cached DataFrame of forecast data.
+        _s3_client: AWS S3 client for cloud storage access.
+        _db_path: Path to SQLite database file.
+    """
     def __init__(self):
+        """Initialize data loader with configured backend."""
         self.cache = TTLCache(maxsize=settings.cache_max_size, ttl=settings.cache_ttl_seconds)
         self.data_path = Path(settings.data_path)
         self.backend = settings.data_backend
@@ -42,11 +64,11 @@ class DataLoader:
             raise ValueError(f"Unsupported data backend: {self.backend}")
 
     def _ensure_local_data_exists(self):
-        """Ensure local data directory exists"""
+        """Ensure local data directory exists."""
         self.data_path.mkdir(parents=True, exist_ok=True)
 
     def _init_database(self):
-        """Prepare SQLite database configuration"""
+        """Prepare SQLite database configuration."""
 
         try:
             self._db_path = sqlite_path_from_url(settings.database_url)
@@ -59,7 +81,7 @@ class DataLoader:
         logger.info("Configured SQLite database at %s", self._db_path)
 
     def _init_cloud_storage(self):
-        """Initialize cloud storage connection"""
+        """Initialize cloud storage connection."""
         if not boto3:
             raise ImportError(
                 "boto3 is required for cloud data loading but is not installed. "
@@ -78,7 +100,7 @@ class DataLoader:
         self._s3_client = session.client("s3")
 
     def _load_data(self) -> pd.DataFrame:
-        """Load data from storage (local or cloud)"""
+        """Load data from storage (local or cloud)."""
         cache_key = f"all_data::{self.backend}"
 
         if cache_key in self.cache:
