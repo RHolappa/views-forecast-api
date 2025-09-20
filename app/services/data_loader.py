@@ -111,7 +111,9 @@ class DataLoader:
 
         if not object_keys:
             logger.warning(
-                "No parquet objects found in bucket %s with prefix '%s'", bucket, settings.cloud_data_prefix
+                "No parquet objects found in bucket %s with prefix '%s'",
+                bucket,
+                settings.cloud_data_prefix,
             )
             return self._create_sample_data()
 
