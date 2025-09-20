@@ -25,6 +25,14 @@ BASE_PERIOD = pd.Period("1990-01", freq="M")
 
 
 def _is_array_like(value: object) -> bool:
+    """Check if value is array-like (list, tuple, or ndarray).
+
+    Args:
+        value: Object to check.
+
+    Returns:
+        True if value is array-like.
+    """
     return isinstance(value, (list, tuple, np.ndarray))
 
 
@@ -61,6 +69,11 @@ RAW_HDI_SCHEMA = DataFrameSchema(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Returns:
+        Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(description="Prepare parquet forecasts for the API")
     parser.add_argument(
         "--preds-parquet",
@@ -89,6 +102,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_preds(parquet_path: Path) -> pd.DataFrame:
+    """Load prediction data from parquet file.
+
+    Args:
+        parquet_path: Path to predictions parquet file.
+
+    Returns:
+        DataFrame with validated prediction data.
+    """
     df = pd.read_parquet(parquet_path).reset_index()
     df = RAW_PRED_SCHEMA.validate(df, lazy=True)
     df["pred_ln_sb_best"] = df["pred_ln_sb_best"].apply(
@@ -98,16 +119,43 @@ def load_preds(parquet_path: Path) -> pd.DataFrame:
 
 
 def load_hdi(parquet_path: Path) -> pd.DataFrame:
+    """Load HDI (High Density Interval) data from parquet.
+
+    Args:
+        parquet_path: Path to HDI parquet file.
+
+    Returns:
+        DataFrame with validated HDI bounds.
+    """
     df = pd.read_parquet(parquet_path).reset_index()
     return RAW_HDI_SCHEMA.validate(df, lazy=True)
 
 
 def month_id_to_month(month_ids: Iterable[int]) -> pd.Series:
+    """Convert month IDs to YYYY-MM string format.
+
+    Args:
+        month_ids: Iterable of month IDs (offset from base period).
+
+    Returns:
+        Series of month strings in YYYY-MM format.
+    """
     offsets = pd.Series(month_ids, dtype="int32") - 1
     return (BASE_PERIOD + offsets).astype(str)
 
 
 def summarise_draws(draws: np.ndarray) -> tuple[np.ndarray, np.ndarray, dict[int, np.ndarray]]:
+    """Summarize forecast draws into statistics.
+
+    Computes mean, quantiles, and exceedance probabilities from
+    Monte Carlo draws.
+
+    Args:
+        draws: Matrix of forecast draws (log scale).
+
+    Returns:
+        Tuple of (mean values, quantiles array, threshold probabilities dict).
+    """
     linear = np.expm1(draws)
     quantiles = np.quantile(linear, [0.25, 0.75, 0.005, 0.995], axis=1)
     thresholds = {thr: (linear >= thr).mean(axis=1) for thr in (1, 10, 100, 1000, 10000)}
@@ -115,6 +163,21 @@ def summarise_draws(draws: np.ndarray) -> tuple[np.ndarray, np.ndarray, dict[int
 
 
 def prepare_forecast_dataframe(preds_path: Path, hdi_path: Path) -> pd.DataFrame:
+    """Prepare forecast DataFrame from raw VIEWS outputs.
+
+    Combines predictions and HDI data, computes summary statistics,
+    and formats according to API schema.
+
+    Args:
+        preds_path: Path to predictions parquet file.
+        hdi_path: Path to HDI bounds parquet file.
+
+    Returns:
+        DataFrame formatted according to FORECAST_COLUMNS schema.
+
+    Raises:
+        ValueError: If HDI bounds are missing for any grid cells.
+    """
     preds_df = load_preds(preds_path)
     hdi_df = load_hdi(hdi_path)
 
@@ -187,6 +250,10 @@ def prepare_forecast_dataframe(preds_path: Path, hdi_path: Path) -> pd.DataFrame
 
 
 def main() -> None:
+    """Entry point for forecast preparation script.
+
+    Processes raw VIEWS forecast outputs into API-ready format.
+    """
     args = parse_args()
 
     if args.output.exists() and not args.overwrite:

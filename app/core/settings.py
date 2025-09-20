@@ -1,3 +1,10 @@
+"""Application metadata and logging configuration.
+
+This module sets up application-wide logging configuration and defines
+metadata constants used throughout the VIEWS Forecast API, including
+application name, version, description, and API documentation tags.
+"""
+
 import logging
 import sys
 

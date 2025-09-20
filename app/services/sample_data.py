@@ -68,6 +68,18 @@ FORECAST_SCHEMA = DataFrameSchema(
 
 @dataclass(frozen=True)
 class SampleConfig:
+    """Configuration for sample data generation.
+
+    Defines parameters for generating synthetic forecast data including
+    countries, time periods, and random seed for reproducibility.
+
+    Attributes:
+        countries: UN M49 numeric country codes to generate data for.
+        months: Time periods for which to generate forecasts.
+        grids_per_country: Number of grid cells to generate per country.
+        seed: Random seed for reproducible data generation.
+    """
+
     # Default UN M49 numeric country codes (zero-padded to 3 digits)
     countries: Sequence[str] = ("074", "108", "404", "454", "800", "834")
     months: Iterable[str] = tuple(pd.period_range("2024-01", periods=6, freq="M").astype(str))
@@ -76,7 +88,18 @@ class SampleConfig:
 
 
 def _build_probabilities(rng: np.random.Generator, base_prob: np.ndarray) -> pd.DataFrame:
-    """Generate monotonically decreasing exceedance probabilities."""
+    """Generate monotonically decreasing exceedance probabilities.
+
+    Creates a hierarchy of exceedance probabilities where each higher
+    threshold has a lower probability than the previous one.
+
+    Args:
+        rng: NumPy random generator for reproducible randomness.
+        base_prob: Base probability array for prob_1 values.
+
+    Returns:
+        DataFrame with columns for each probability threshold (prob_1 through prob_10000).
+    """
 
     # The exceedance ladder shrinks progressively so prob_10 <= prob_1, etc.
     prob_10 = np.clip(base_prob * rng.uniform(0.4, 0.8, size=base_prob.shape), 0.0, 1.0)

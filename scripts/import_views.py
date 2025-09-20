@@ -39,6 +39,11 @@ FORECAST_COLUMNS: List[str] = [
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse command line arguments for the import script.
+
+    Returns:
+        Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(description="Prepare VIEWS forecasts for the API")
     parser.add_argument(
         "--raw-dir",
@@ -85,6 +90,18 @@ def parse_args() -> argparse.Namespace:
 
 
 def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
+    """Build month ID to name mapping from VIEWS codebook.
+
+    Args:
+        codebook_path: Path to the VIEWS codebook JSON file.
+
+    Returns:
+        Dictionary mapping month IDs to YYYY-MM formatted strings.
+
+    Raises:
+        FileNotFoundError: If codebook file doesn't exist.
+        ValueError: If codebook format is invalid.
+    """
     if not codebook_path.exists():
         raise FileNotFoundError(f"Codebook not found at {codebook_path}")
 
@@ -110,6 +127,19 @@ def build_month_lookup(codebook_path: Path) -> Dict[int, str]:
 
 
 def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
+    """Load PRIO-GRID metadata lookup table.
+
+    Args:
+        path: Optional path to CSV with PRIO-GRID metadata.
+
+    Returns:
+        DataFrame with grid_id, latitude, longitude, country_id columns,
+        or None if no path provided.
+
+    Raises:
+        FileNotFoundError: If lookup file doesn't exist.
+        ValueError: If required columns are missing.
+    """
     if path is None:
         logger.warning("No PRIO-GRID lookup supplied; pgm conversion will be skipped")
         return None
@@ -159,6 +189,19 @@ def load_priogrid_lookup(path: Optional[Path]) -> Optional[pd.DataFrame]:
 
 
 def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
+    """Load country centroid coordinates.
+
+    Args:
+        path: Optional path to CSV with country centroids.
+
+    Returns:
+        DataFrame with country_id, latitude, longitude columns,
+        or None if no path provided.
+
+    Raises:
+        FileNotFoundError: If centroids file doesn't exist.
+        ValueError: If required columns are missing.
+    """
     if path is None:
         return None
     if not path.exists():
@@ -184,6 +227,17 @@ def load_country_centroids(path: Optional[Path]) -> Optional[pd.DataFrame]:
 
 
 def ensure_metric_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure all required metric columns exist with valid values.
+
+    Fills missing metric columns with appropriate defaults and ensures
+    values are within expected ranges.
+
+    Args:
+        df: Input DataFrame with partial metrics.
+
+    Returns:
+        DataFrame with all required metric columns populated.
+    """
     df = df.copy()
     df["map"] = df["map"].fillna(0)
     df["prob_1"] = df["prob_1"].clip(lower=0, upper=1).fillna(0)
@@ -222,6 +276,14 @@ def ensure_metric_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Reorder columns to match expected API schema.
+
+    Args:
+        df: DataFrame with columns in any order.
+
+    Returns:
+        DataFrame with columns reordered to match FORECAST_COLUMNS.
+    """
     for col in FORECAST_COLUMNS:
         if col not in df.columns:
             df[col] = None
@@ -235,6 +297,22 @@ def convert_priogrid(
     priogrid_lookup: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
+    """Convert PRIO-GRID CSV to parquet format.
+
+    Args:
+        csv_path: Path to input PRIO-GRID CSV file.
+        output_path: Path where parquet file will be written.
+        month_lookup: Dictionary mapping month IDs to YYYY-MM strings.
+        priogrid_lookup: DataFrame with grid metadata.
+        overwrite: Whether to overwrite existing output file.
+
+    Returns:
+        Path to the created parquet file.
+
+    Raises:
+        FileExistsError: If output exists and overwrite is False.
+        ValueError: If input data is invalid or incomplete.
+    """
     if output_path.exists() and not overwrite:
         raise FileExistsError(f"{output_path} already exists. Use --overwrite to replace it.")
 
@@ -283,6 +361,22 @@ def convert_country_month(
     centroids: pd.DataFrame,
     overwrite: bool,
 ) -> Path:
+    """Convert country-month CSV to parquet format.
+
+    Args:
+        csv_path: Path to input country-month CSV file.
+        output_path: Path where parquet file will be written.
+        month_lookup: Dictionary mapping month IDs to YYYY-MM strings.
+        centroids: DataFrame with country centroid coordinates.
+        overwrite: Whether to overwrite existing output file.
+
+    Returns:
+        Path to the created parquet file.
+
+    Raises:
+        FileExistsError: If output exists and overwrite is False.
+        ValueError: If input data is invalid or incomplete.
+    """
     if output_path.exists() and not overwrite:
         raise FileExistsError(f"{output_path} already exists. Use --overwrite to replace it.")
 
@@ -332,6 +426,11 @@ def convert_country_month(
 
 
 def main() -> None:
+    """Main entry point for VIEWS data import script.
+
+    Processes raw VIEWS CSV files and converts them to parquet format
+    compatible with the API.
+    """
     args = parse_args()
 
     codebook_path = args.codebook or args.raw_dir / "codebook.json"

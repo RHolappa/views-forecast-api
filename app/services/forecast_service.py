@@ -1,3 +1,11 @@
+"""Core service for forecast data retrieval and processing.
+
+This module provides the main business logic layer for handling forecast
+data operations, including query processing, data filtering, and summary
+generation. It acts as an intermediary between the API routes and the
+data loader.
+"""
+
 import logging
 from datetime import datetime
 from typing import Any, Dict, List
@@ -9,7 +17,17 @@ logger = logging.getLogger(__name__)
 
 
 class ForecastService:
+    """Main service class for handling forecast operations.
+
+    Provides methods for querying, filtering, and summarizing forecast data.
+    Acts as the business logic layer between API endpoints and data storage.
+
+    Attributes:
+        data_loader: Instance of DataLoader for accessing forecast data.
+    """
+
     def __init__(self):
+        """Initialize the forecast service with data loader."""
         self.data_loader = data_loader
 
     def parse_month_range(self, month_range: str) -> List[str]:
@@ -107,7 +125,15 @@ class ForecastService:
     def filter_metrics(
         self, forecast: GridCellForecast, metrics: List[MetricName]
     ) -> Dict[str, Any]:
-        """Filter forecast to include only requested metrics"""
+        """Filter forecast to include only requested metrics.
+
+        Args:
+            forecast: Complete forecast data for a grid cell.
+            metrics: List of metric names to include in the output.
+
+        Returns:
+            Dictionary containing forecast data with only requested metrics.
+        """
         result = {
             "grid_id": forecast.grid_id,
             "latitude": forecast.latitude,
