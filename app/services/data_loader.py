@@ -7,6 +7,8 @@ from cachetools import TTLCache
 
 from app.core.config import settings
 from app.models.forecast import ALL_METRIC_NAMES, ForecastMetrics, GridCellForecast, MetricName
+from app.services.data_initializer import ensure_local_data_ready
+from app.services.sample_data import FORECAST_COLUMNS, generate_sample_forecasts
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +55,15 @@ class DataLoader:
         parquet_files = list(self.data_path.glob("*.parquet"))
 
         if not parquet_files:
-            logger.warning(f"No parquet files found in {self.data_path}")
-            return self._create_sample_data()
+            logger.warning("No parquet files found in %s", self.data_path)
+            ensure_local_data_ready(prompt_user=False)
+            parquet_files = list(self.data_path.glob("*.parquet"))
+
+        if not parquet_files:
+            logger.error(
+                "Unable to create sample data automatically. Returning empty DataFrame for safety."
+            )
+            return pd.DataFrame(columns=FORECAST_COLUMNS)
 
         dfs = []
         for file in parquet_files:
@@ -78,54 +87,9 @@ class DataLoader:
 
     def _create_sample_data(self) -> pd.DataFrame:
         """Create sample data for testing"""
-        import numpy as np
-
         logger.info("Creating sample forecast data")
 
-        # Create a grid of sample data
-        countries = ["UGA", "KEN", "TZA"]  # Uganda, Kenya, Tanzania
-        months = ["2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06"]
-
-        data = []
-        grid_id = 1
-
-        for country in countries:
-            # Create 10 grid cells per country
-            for i in range(10):
-                lat = np.random.uniform(-10, 10)
-                lon = np.random.uniform(20, 40)
-
-                for month in months:
-                    # Generate realistic-looking forecast data
-                    map_value = np.random.exponential(scale=10)
-
-                    row = {
-                        "grid_id": grid_id,
-                        "latitude": round(lat, 4),
-                        "longitude": round(lon, 4),
-                        "country_id": country,
-                        "admin_1_id": f"{country}_R{i//3}",
-                        "admin_2_id": f"{country}_D{i}",
-                        "month": month,
-                        "map": map_value,
-                        "ci_50_low": map_value * 0.7,
-                        "ci_50_high": map_value * 1.3,
-                        "ci_90_low": map_value * 0.4,
-                        "ci_90_high": map_value * 2.0,
-                        "ci_99_low": map_value * 0.1,
-                        "ci_99_high": map_value * 3.5,
-                        "prob_0": np.random.beta(5, 2),
-                        "prob_1": np.random.beta(4, 3),
-                        "prob_10": np.random.beta(3, 4),
-                        "prob_100": np.random.beta(2, 5),
-                        "prob_1000": np.random.beta(1, 6),
-                        "prob_10000": np.random.beta(1, 10),
-                    }
-                    data.append(row)
-
-                grid_id += 1
-
-        df = pd.DataFrame(data)
+        df = generate_sample_forecasts()
 
         # Save sample data for future use
         sample_file = self.data_path / "sample_data.parquet"

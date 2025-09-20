@@ -39,10 +39,10 @@ def test_get_forecasts():
     assert isinstance(forecasts, list)
 
     # Test with country filter
-    query = ForecastQuery(country="UGA")
+    query = ForecastQuery(country="800")
     forecasts = service.get_forecasts(query)
     for forecast in forecasts:
-        assert forecast.country_id == "UGA"
+        assert forecast.country_id == "800"
 
     # Test with month range
     query = ForecastQuery(month_range="2024-01:2024-02")

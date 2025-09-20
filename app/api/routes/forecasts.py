@@ -17,7 +17,9 @@ router = APIRouter(prefix="/forecasts", tags=["forecasts"])
 
 @router.get("", response_model=ForecastResponse)
 async def get_forecasts(
-    country: Optional[str] = Query(None, description="Filter by country code (ISO 3166-1 alpha-3)"),
+    country: Optional[str] = Query(
+        None, description="Filter by country code (UN M49 numeric, zero-padded to 3 digits)"
+    ),
     grid_ids: Optional[List[int]] = Query(None, description="Filter by grid cell IDs"),
     months: Optional[List[str]] = Query(None, description="Filter by months (YYYY-MM format)"),
     month_range: Optional[str] = Query(None, description="Month range (YYYY-MM:YYYY-MM)"),
@@ -33,7 +35,7 @@ async def get_forecasts(
 
     ## Query Parameters
 
-    - **country**: ISO 3166-1 alpha-3 country code (e.g., "UGA", "KEN")
+    - **country**: UN M49 numeric country code (e.g., `800` for Uganda, `404` for Kenya)
     - **grid_ids**: List of grid cell IDs (can be repeated: ?grid_ids=1&grid_ids=2)
     - **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)
     - **month_range**: Range of months (e.g., "2024-01:2024-06")
@@ -57,7 +59,7 @@ async def get_forecasts(
 
     Get all forecasts for Uganda in January 2024:
     ```
-    GET /api/v1/forecasts?country=UGA&months=2024-01
+    GET /api/v1/forecasts?country=800&months=2024-01
     ```
 
     Get specific metrics for a grid cell range over 6 months:

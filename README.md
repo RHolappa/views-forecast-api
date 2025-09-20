@@ -29,16 +29,53 @@ cp .env.example .env
 4. Run the API:
 ```bash
 make dev  # Development mode with auto-reload
+          # This will create sample data if not found 
 # or
 make run  # Production mode
 ```
 
 The API will be available at `http://localhost:8000`
 
+
+## Working with Official VIEWS Forecast Drops
+
+For quick local exploration, run `make dev` (or `python scripts/bootstrap_local_data.py`) to accept the prompt that generates a synthetic `sample_data.parquet` in the correct schema. (Pandera used)
+
+1. **Import** – download the raw parquet pair from VIEWS for example: (`preds_001.parquet` and `preds_001_90_hdi.parquet`) and drop them under `data/views_raw/<year>/<month>/`. The repository ships an example in `data/views_raw/2025/07/`.
+2. **Prepare** – convert the draws into the API schema. The script reads the raw parquets only, expands the forecast draws into summary statistics, and validates the output with Pandera before writing the parquet:
+   ```bash
+   venv/bin/python scripts/prepare_views_forecasts.py \
+     --preds-parquet data/views_raw/2025/07/preds_001.parquet \
+     --hdi-parquet   data/views_raw/2025/07/preds_001_90_hdi.parquet \
+     --output        data/views_parquet/2025/07/api_ready/forecasts.parquet \
+     --overwrite
+   ```
+   The resulting parquet stores int32 grid identifiers, zero-padded country codes, and float32 metrics/probabilities so the API loader can stream the data efficiently.
+3. **Use** – point the API at the converted data by copying `.env.example` to `.env` (if you haven’t already) and set:
+   ```env
+   USE_LOCAL_DATA=true
+   DATA_PATH=data/views_parquet/2025/07/api_ready
+   API_KEY=your-local-api-key
+   ```
+   Restart `make dev` after any change so the loader drops its cache.
+4. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
+   ```bash
+   curl -H "X-API-Key: your-local-api-key" \
+        "http://localhost:8000/api/v1/forecasts?country=MEX&months=2025-08"
+   ```
+   The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
+5. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
+   ```bash
+   venv/bin/python - <<'PY'
+   from app.services.data_loader import data_loader
+   data_loader.cache.clear()
+   PY
+   ```
+
 ## API Capabilities
 Make sure you have the X-API-Key header used based on the env file
 - Metadata coverage: months and grid cells are exposed via `/api/v1/metadata/months` and `/api/v1/metadata/grid-cells`.
-- Country-wide retrieval: `GET /api/v1/forecasts?country=UGA` returns every grid cell in the country with the standard 13 metrics.
+- Country-wide retrieval: `GET /api/v1/forecasts?country=800` returns every grid cell in the country with the standard 13 metrics (UN M49 code `800` = Uganda).
 - Targeted grid lookups: use `grid_ids` with one or many IDs to pull specific cells alongside other filters.
 - Temporal slicing: apply `months=YYYY-MM` or `month_range=YYYY-MM:YYYY-MM` to focus on single months or contiguous ranges.
 - Metric selection: repeat the `metrics` parameter (e.g., `metrics=map`) to limit the payload to the values you need.
@@ -65,7 +102,7 @@ GET /api/v1/forecasts
 ```
 
 Query parameters:
-- `country`: ISO 3166-1 alpha-3 country code (e.g., "UGA")
+- `country`: UN M49 numeric country code (zero-padded, e.g., `800` for Uganda)
 - `grid_ids`: List of grid cell IDs
 - `months`: Specific months (YYYY-MM format)
 - `month_range`: Range of months (YYYY-MM:YYYY-MM)
@@ -74,7 +111,7 @@ Query parameters:
 
 Example:
 ```bash
-curl "http://localhost:8000/api/v1/forecasts?country=UGA&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
+curl "http://localhost:8000/api/v1/forecasts?country=800&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
 Each forecast row includes `grid_id`, centroid latitude/longitude, the UN M49 `country_id`, and optional `admin_1_id` and `admin_2_id` fields.
@@ -88,7 +125,7 @@ Returns all months with available forecast data.
 
 #### Get Grid Cells
 ```bash
-GET /api/v1/metadata/grid-cells?country=UGA
+GET /api/v1/metadata/grid-cells?country=800
 ```
 
 Returns grid cells, optionally filtered by country. Each record includes the grid ID, centroid lat/lon, the UN M49 country code, and admin identifiers when available.
@@ -98,9 +135,9 @@ Returns grid cells, optionally filtered by country. Each record includes the gri
 The API supports two data storage modes:
 
 ### Local Data (Development)
-- Place Parquet files in `data/sample/` directory
-- Set `USE_LOCAL_DATA=true` in `.env`
-- Sample data is auto-generated if no files are found
+- Set `USE_LOCAL_DATA=true` in `.env` (defaults to `true`) and point `DATA_PATH` at the folder that holds your parquet files (defaults to `data/sample`).
+- Run `make dev` – if no parquet files exist the task will offer to generate a synthetic dataset that mirrors the API schema (`sample_data.parquet` under `DATA_PATH`).
+- You can manually regenerate the sample dataset at any time with `python scripts/bootstrap_local_data.py`.
 
 ### Cloud Storage (Production)
 - Configure cloud credentials in `.env`
@@ -120,39 +157,6 @@ make lint    # Run linting
 make format  # Auto-format code
 ```
 
-## Working with Official VIEWS Forecast Drops
-
-1. **Download the raw files** – grab the PRIO-GRID CSV (`fatalities*_pgm.csv`), the country-month CSV (`fatalities*_cm.csv`), and the forecast parquet pair (`preds_001*.parquet`). Drop them under `data/views_raw/<year>/<month>/` and `data/views_parquet/<year>/<month>/` respectively.
-2. **Generate the API parquet** – convert the raw files into the schema expected by the service:
-   ```bash
-   venv/bin/python scripts/prepare_views_forecasts.py \
-     --pgm-csv data/views_raw/2025/07/fatalities002_2025_07_t01_pgm.csv \
-     --cm-csv  data/views_raw/2025/07/fatalities002_2025_07_t01_cm.csv \
-     --preds-parquet "data/views_parquet/2025/07/preds_001.parquet" \
-     --hdi-parquet data/views_parquet/2025/07/preds_001_90_hdi.parquet \
-     --output data/views_parquet/2025/07/api_ready/forecasts.parquet \
-     --overwrite
-   ```
-3. **Point the API at the converted data** – copy `.env.example` to `.env` (if you haven’t already) and set:
-   ```env
-   USE_LOCAL_DATA=true
-   DATA_PATH=data/views_parquet/2025/07/api_ready
-   API_KEY=your-local-api-key
-   ```
-   Restart `make dev` after any change so the loader drops its cache.
-4. **Call the API locally** – every request must include `X-API-Key: your-local-api-key` when `API_KEY` is set. Example:
-   ```bash
-   curl -H "X-API-Key: your-local-api-key" \
-        "http://localhost:8000/api/v1/forecasts?country=MEX&months=2025-08"
-   ```
-   The repo ships a Bruno workspace in `views-forecast-api-bruno/`; import it and update the environment with your key to exercise the endpoints quickly.
-5. **Refresh data** – rerun the conversion script whenever you download a new drop, then restart the server or clear the cache with:
-   ```bash
-   venv/bin/python - <<'PY'
-   from app.services.data_loader import data_loader
-   data_loader.cache.clear()
-   PY
-   ```
 
 ### Project Structure
 ```

@@ -92,7 +92,9 @@ class GridCellForecast(BaseModel):
     grid_id: int = Field(..., description="Unique grid cell identifier")
     latitude: float = Field(..., ge=-90, le=90, description="Grid cell center latitude")
     longitude: float = Field(..., ge=-180, le=180, description="Grid cell center longitude")
-    country_id: str = Field(..., description="ISO 3166-1 alpha-3 country code")
+    country_id: str = Field(
+        ..., description="UN M49 numeric country code (zero-padded to 3 digits)"
+    )
     admin_1_id: Optional[str] = Field(None, description="Admin level 1 identifier")
     admin_2_id: Optional[str] = Field(None, description="Admin level 2 identifier")
     month: str = Field(..., description="Forecast month in YYYY-MM format")
@@ -102,7 +104,10 @@ class GridCellForecast(BaseModel):
 class ForecastQuery(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    country: Optional[str] = Field(None, description="Filter by country code (ISO 3166-1 alpha-3)")
+    country: Optional[str] = Field(
+        None,
+        description="Filter by country code (UN M49 numeric, zero-padded to 3 digits)",
+    )
     grid_ids: Optional[List[int]] = Field(None, description="Filter by specific grid cell IDs")
     months: Optional[List[str]] = Field(None, description="Filter by months (YYYY-MM format)")
     month_range: Optional[str] = Field(None, description="Month range in format YYYY-MM:YYYY-MM")
@@ -116,9 +121,11 @@ class ForecastQuery(BaseModel):
     @field_validator("country")
     @classmethod
     def validate_country(cls, v):
-        if v and len(v) != 3:
-            raise ValueError("Country code must be ISO 3166-1 alpha-3 (3 characters)")
-        return v.upper() if v else v
+        if not v:
+            return v
+        if not v.isdigit() or len(v) != 3:
+            raise ValueError("Country code must be a UN M49 numeric identifier padded to 3 digits")
+        return v
 
     @field_validator("months")
     @classmethod
