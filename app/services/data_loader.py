@@ -150,7 +150,9 @@ class DataLoader:
         missing_columns = [col for col in FORECAST_COLUMNS if col not in df.columns]
         if missing_columns:
             logger.error(
-                "Database %s is missing expected columns: %s", self._db_path, ", ".join(missing_columns)
+                "Database %s is missing expected columns: %s",
+                self._db_path,
+                ", ".join(missing_columns),
             )
             return pd.DataFrame(columns=FORECAST_COLUMNS)
 

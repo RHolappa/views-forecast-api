@@ -244,8 +244,7 @@ def normalize_forecast_frame(df: pd.DataFrame) -> pd.DataFrame:
         if invalid_mask.any():
             sample = non_null_values[invalid_mask].unique()[:5]
             raise ValueError(
-                "Encountered non UN M49 country identifiers. Sample values: "
-                f"{', '.join(sample)}"
+                "Encountered non UN M49 country identifiers. Sample values: " f"{', '.join(sample)}"
             )
 
         country_series.loc[non_null_mask] = non_null_values
