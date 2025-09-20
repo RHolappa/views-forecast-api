@@ -88,7 +88,13 @@ class ForecastService:
     def get_forecast_summary(self, forecasts: List[GridCellForecast]) -> Dict[str, Any]:
         """Generate summary statistics for forecasts"""
         if not forecasts:
-            return {"count": 0, "countries": [], "months": [], "grid_cells": []}
+            return {
+                "count": 0,
+                "countries": [],
+                "months": [],
+                "grid_cells": 0,
+                "metrics_summary": {"avg_map": 0.0, "min_map": None, "max_map": None},
+            }
 
         countries = set()
         months = set()
