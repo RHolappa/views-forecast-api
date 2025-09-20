@@ -28,7 +28,8 @@
 4. Hydrate the local SQLite database and start the API:
 
    ```bash
-   make db-load      # downloads & converts raw parquets into data/forecasts.db use  RESET_DB=1 if old exists
+   make db-load      # downloads & converts raw parquets into data/forecasts.db use  add RESET_DB=1 if old exists
+                     # based on if you have cloud bucket access or not it loads from there full or generates just sample data
    make dev          # API on http://localhost:8000
    ```
 
