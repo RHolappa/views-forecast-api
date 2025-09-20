@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     """Handle application startup and shutdown"""
     logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
     logger.info(f"Environment: {settings.environment}")
-    logger.info(f"Using {'local' if settings.use_local_data else 'cloud'} data")
+    logger.info(f"Using data backend: {settings.data_backend}")
 
     yield
 

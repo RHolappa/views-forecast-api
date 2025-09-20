@@ -1,5 +1,6 @@
 import io
 import logging
+import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -16,6 +17,7 @@ except ModuleNotFoundError:  # pragma: no cover - boto3 optional for local workf
 from app.core.config import settings
 from app.models.forecast import ALL_METRIC_NAMES, ForecastMetrics, GridCellForecast, MetricName
 from app.services.data_initializer import ensure_local_data_ready
+from app.services.db_utils import sqlite_path_from_url
 from app.services.sample_data import FORECAST_COLUMNS, generate_sample_forecasts
 
 logger = logging.getLogger(__name__)
@@ -25,17 +27,36 @@ class DataLoader:
     def __init__(self):
         self.cache = TTLCache(maxsize=settings.cache_max_size, ttl=settings.cache_ttl_seconds)
         self.data_path = Path(settings.data_path)
+        self.backend = settings.data_backend
         self._data: Optional[pd.DataFrame] = None
         self._s3_client = None
+        self._db_path: Optional[Path] = None
 
-        if settings.use_local_data:
+        if self.backend == "parquet":
             self._ensure_local_data_exists()
-        else:
+        elif self.backend == "database":
+            self._init_database()
+        elif self.backend == "cloud":
             self._init_cloud_storage()
+        else:  # pragma: no cover - guard for unexpected configuration
+            raise ValueError(f"Unsupported data backend: {self.backend}")
 
     def _ensure_local_data_exists(self):
         """Ensure local data directory exists"""
         self.data_path.mkdir(parents=True, exist_ok=True)
+
+    def _init_database(self):
+        """Prepare SQLite database configuration"""
+
+        try:
+            self._db_path = sqlite_path_from_url(settings.database_url)
+        except ValueError as exc:
+            raise ValueError(f"Invalid DATABASE_URL '{settings.database_url}': {exc}") from exc
+
+        if not self._db_path.parent.exists():
+            self._db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.info("Configured SQLite database at %s", self._db_path)
 
     def _init_cloud_storage(self):
         """Initialize cloud storage connection"""
@@ -58,16 +79,20 @@ class DataLoader:
 
     def _load_data(self) -> pd.DataFrame:
         """Load data from storage (local or cloud)"""
-        cache_key = "all_data"
+        cache_key = f"all_data::{self.backend}"
 
         if cache_key in self.cache:
             logger.debug("Returning cached data")
             return self.cache[cache_key]
 
-        if settings.use_local_data:
+        if self.backend == "parquet":
             df = self._load_local_data()
-        else:
+        elif self.backend == "database":
+            df = self._load_database_data()
+        elif self.backend == "cloud":
             df = self._load_cloud_data()
+        else:  # pragma: no cover - guard for unsupported configuration
+            raise ValueError(f"Unsupported data backend: {self.backend}")
 
         self.cache[cache_key] = df
         return df
@@ -99,6 +124,40 @@ class DataLoader:
             return pd.concat(dfs, ignore_index=True)
         else:
             return self._create_sample_data()
+
+    def _load_database_data(self) -> pd.DataFrame:
+        """Load data from a SQLite database"""
+
+        if not self._db_path:
+            logger.error("Database path is not configured; falling back to empty DataFrame")
+            return pd.DataFrame(columns=FORECAST_COLUMNS)
+
+        if not self._db_path.exists():
+            logger.warning(
+                "SQLite database %s not found. Run `python scripts/load_parquet_to_db.py` "
+                "or `make db-load` to populate it.",
+                self._db_path,
+            )
+            return pd.DataFrame(columns=FORECAST_COLUMNS)
+
+        try:
+            with sqlite3.connect(self._db_path) as conn:
+                df = pd.read_sql_query("SELECT * FROM forecasts", conn)
+        except sqlite3.OperationalError as exc:
+            logger.error("Failed to read forecasts table from %s: %s", self._db_path, exc)
+            return pd.DataFrame(columns=FORECAST_COLUMNS)
+
+        missing_columns = [col for col in FORECAST_COLUMNS if col not in df.columns]
+        if missing_columns:
+            logger.error(
+                "Database %s is missing expected columns: %s",
+                self._db_path,
+                ", ".join(missing_columns),
+            )
+            return pd.DataFrame(columns=FORECAST_COLUMNS)
+
+        df = df[FORECAST_COLUMNS]
+        return df
 
     def _load_cloud_data(self) -> pd.DataFrame:
         """Load data from cloud storage"""
