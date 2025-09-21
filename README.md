@@ -134,10 +134,10 @@ Example (Deployed by Sillah)
 ```bash
 
 curl -H "X-API-Key: your-local-api-key" \
-"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map%3E50&metric_filters=prob_1000%3E%3D0.1"
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map%3E50&metric_filters=prob_1000"
 
 curl -H "X-API-Key: your-local-api-key" \
-"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map%3E50"
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map"
 
 curl -H "X-API-Key: your-local-api-key" \
 "https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&months=2025-09&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
