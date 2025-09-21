@@ -29,7 +29,10 @@
 
    ```bash
    make db-load      # downloads & converts raw parquets into data/forecasts.db use  add RESET_DB=1 if old exists
-                     # based on if you have cloud bucket access or not it loads from there full or generates just sample data
+                     # Skip this if you dont have CLOUD access!
+   ```
+
+   ```bash
    make dev          # API on http://localhost:8000
    ```
 

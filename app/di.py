@@ -7,14 +7,14 @@ from functools import lru_cache
 from fastapi import Depends
 
 from app.domain.repositories import ForecastRepository
-from app.services.data_loader import ParquetForecastRepository
+from app.services.data_loader import DataLoader
 from app.services.forecast_service import ForecastService
 
 
 @lru_cache
 def get_forecast_repository() -> ForecastRepository:
-    """Return the parquet-backed repository (cached per process)."""
-    return ParquetForecastRepository()
+    """Return the configured forecast repository (cached per process)."""
+    return DataLoader()
 
 
 def get_forecast_service(
