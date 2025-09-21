@@ -19,11 +19,16 @@
 2. Install dependencies and bootstrap the environment:
 
    ```bash
+   python3 -m venv path/to/venv
+   source path/to/venv/bin/activate
+   ```
+
+   ```bash
    make install
    cp .env.example .env
    ```
 
-3. Use the shared sandbox AWS credentials (temporary demo READ access to the bucket):
+3. Now you can update / add the AWS credentials if needed. Contact us if you need read -access! S3 bucket have latest preds (07/25) parquet files uploaded and will be updated when possible.
 
 4. Hydrate the local SQLite database and start the API:
 
@@ -40,6 +45,13 @@
 
 The API will be available at `http://localhost:8000`
 
+## API Documentation
+
+Once running, visit:
+
+- **Interactive API docs**: <http://localhost:8000/docs>
+- **OpenAPI schema**: <http://localhost:8000/openapi.json>
+
 ## API Capabilities
 
 Make sure you have the X-API-Key header used based on the env file
@@ -51,12 +63,7 @@ Make sure you have the X-API-Key header used based on the env file
 - Metric selection: repeat the `metrics` parameter (e.g., `metrics=map`) to limit the payload to the values you need.
 - Response formats and metadata: choose `format=json` or `format=ndjson`; each record includes the grid ID, centroid latitude/longitude, UN M49 country ID, and optional Admin-1/Admin-2 identifiers.
 
-## API Documentation
 
-Once running, visit:
-
-- **Interactive API docs**: <http://localhost:8000/docs>
-- **OpenAPI schema**: <http://localhost:8000/openapi.json>
 
 ### Bruno
 
