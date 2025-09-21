@@ -63,3 +63,4 @@ AGENTS.md
 CLAUDE.md
 .claude
 *.db
+.ruff_cache/

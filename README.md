@@ -80,15 +80,34 @@ Query parameters:
 - `metrics`: Specific metrics to return
 - `format`: Response format (json or ndjson)
 
-Example:
+Examples:
 
-```bash
-curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
-```
-or:
-
+**Query by country (all cells in a country):**
 ```bash
 curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074"
+```
+
+**Query by specific grid cell IDs:**
+```bash
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?grid_ids=12001001&grid_ids=12001002"
+```
+
+**Query by month or month range:**
+```bash
+# Single month
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01"
+
+# Month range
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&month_range=2024-01:2024-06"
+```
+
+**Choose specific metrics (MAP, confidence intervals, probabilities):**
+```bash
+# All confidence intervals and probabilities
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&metrics=map&metrics=ci_50_low&metrics=ci_50_high&metrics=ci_90_low&metrics=ci_90_high&metrics=ci_99_low&metrics=ci_99_high&metrics=prob_100&metrics=prob_1000"
+
+# Just MAP and 90% confidence interval
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
 ## Data Storage
@@ -113,13 +132,6 @@ The API supports these data storage modes:
   - `MODE=append` appends instead of replacing.
 - Use `make db-clean` (or `python scripts/load_parquet_to_db.py --reset-db`) when you want to remove the SQLite file and start fresh.
 - When refreshing data, re-run `make db-load MODE=replace` (default) or `MODE=append` depending on your workflow.
-
-### Cloud Storage (Production)
-
-- Set `USE_LOCAL_DATA=false` and/or `DATA_BACKEND=cloud`.
-- Configure S3 credentials in `.env` using `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (or rely on the default credential chain inside your deployment environment). For quick demos you can export the shared sandbox keys shown in the quick-start section.
-- Point `CLOUD_BUCKET_NAME` at the bucket that stores parquet files and use either `CLOUD_DATA_KEY` for a single parquet object (for example `api_ready/forecasts.parquet`) or `CLOUD_DATA_PREFIX` to load every parquet under a folder.
-- The loader downloads parquet objects directly from S3 using `boto3`; ensure the IAM role or user has `s3:ListBucket` and `s3:GetObject` permissions for the configured bucket.
 
 ## Development
 
