@@ -5,15 +5,15 @@ meta {
 }
 
 get {
-  url: http://localhost:8000/api/v1/forecasts?country=074&metric_filters=map>80&metrics=map
+  url: http://localhost:8000/api/v1/forecasts?metric_filters=prob_1000>0.4&metrics=prob_1000&month_range=2026-08:2026-12
   body: none
   auth: apikey
 }
 
 params:query {
-  country: 074
-  metric_filters: map>80
-  metrics: map
+  metric_filters: prob_1000>0.4
+  metrics: prob_1000
+  month_range: 2026-08:2026-12
 }
 
 auth:apikey {
