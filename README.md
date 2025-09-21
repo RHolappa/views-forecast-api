@@ -64,7 +64,6 @@ Make sure you have the X-API-Key header used based on the env file
 - Response formats and metadata: choose `format=json` or `format=ndjson`; each record includes the grid ID, centroid latitude/longitude, UN M49 country ID, and optional Admin-1/Admin-2 identifiers.
 
 
-
 ### Bruno
 
 <https://www.usebruno.com/>
@@ -126,6 +125,38 @@ curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?
 
 # Combine multiple filters
 curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&metric_filters=map>50&metric_filters=prob_1000>=0.1"
+```
+
+### Production deployment
+
+Example (Deployed by Sillah)
+
+```bash
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map%3E50&metric_filters=prob_1000%3E%3D0.1"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metric_filters=map%3E50"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&months=2025-09&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&metrics=map&metrics=ci_50_low&metrics=ci_50_high&metrics=ci_90_low&metrics=ci_90_high&metrics=ci_99_low&metrics=ci_99_high&metrics=prob_100&metrics=prob_1000"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&month_range=2025-08:2025-12"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074&months=2025-09"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?country=074"
+
+curl -H "X-API-Key: your-local-api-key" \
+"https://app-api-485850269158.europe-north1.run.app/api/v1/forecasts?grid_ids=12001001&grid_ids=12001002"
+
 ```
 
 ## Data Storage
