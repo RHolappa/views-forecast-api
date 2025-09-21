@@ -9,7 +9,7 @@ be provided via environment variables or a .env file.
 import json
 from typing import List, Literal, Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -121,7 +121,7 @@ class Settings(BaseSettings):
 
     @field_validator("data_backend", mode="before")
     @classmethod
-    def normalize_data_backend(cls, v, values):
+    def normalize_data_backend(cls, v, info: ValidationInfo):
         """Normalize data backend configuration with fallback logic.
 
         Converts backend string to lowercase and applies legacy fallback
@@ -137,8 +137,8 @@ class Settings(BaseSettings):
         if isinstance(v, str) and v:
             return v.lower()
 
-        # Fall back to legacy USE_LOCAL_DATA toggle when DATA_BACKEND is unset
-        use_local = values.get("use_local_data")
+        prior_values = info.data or {}
+        use_local = prior_values.get("use_local_data")
         if use_local is False:
             return "cloud"
 

@@ -179,3 +179,19 @@ def test_invalid_metric_filter():
     """Metric filter expressions should be validated."""
     response = client.get("/api/v1/forecasts?metric_filters=map>>50")
     assert response.status_code == 400
+
+
+def test_ndjson_streaming():
+    """NDJSON format should stream forecasts line by line."""
+    response = client.get("/api/v1/forecasts?format=ndjson")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/x-ndjson"
+    raw_lines = [line for line in response.iter_lines() if line]
+    lines = [line.decode() if isinstance(line, bytes) else line for line in raw_lines]
+    assert lines, "expected NDJSON lines in response"
+
+
+def test_bad_metric_filter_error_propagates():
+    """Repository errors should bubble up as 400 Bad Request."""
+    response = client.get("/api/v1/forecasts?metric_filters=unknown>5")
+    assert response.status_code == 400

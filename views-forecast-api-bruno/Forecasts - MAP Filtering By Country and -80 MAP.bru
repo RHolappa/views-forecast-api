@@ -1,0 +1,27 @@
+meta {
+  name: Forecasts - MAP Filtering By Country and >80 MAP
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:8000/api/v1/forecasts?country=074&metric_filters=map>80&metrics=map
+  body: none
+  auth: apikey
+}
+
+params:query {
+  country: 074
+  metric_filters: map>80
+  metrics: map
+}
+
+auth:apikey {
+  key: X-API-Key
+  value: your-local-api-key
+  placement: header
+}
+
+settings {
+  encodeUrl: true
+}
