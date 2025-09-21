@@ -30,6 +30,7 @@ def log_startup_banner() -> None:
         f"   API prefix  : {settings.api_v1_prefix}\n"
     )
     logger.info("%s", banner)
+    logger.info("Starting %s v%s", APP_NAME, APP_VERSION)
 
 
 @asynccontextmanager
