@@ -152,7 +152,10 @@ class DataLoader(ForecastRepository):
                 logger.error("Error loading %s: %s", file, exc)
 
         if frames:
-            return pd.concat(frames, ignore_index=True)
+            df = pd.concat(frames, ignore_index=True)
+            if not df.empty:
+                return df
+            logger.warning("Parquet files contained no rows; falling back to sample data")
         return self._create_sample_data()
 
     def _load_database_data(self) -> pd.DataFrame:
@@ -183,7 +186,15 @@ class DataLoader(ForecastRepository):
             )
             return pd.DataFrame(columns=FORECAST_COLUMNS)
 
-        return df[FORECAST_COLUMNS]
+        df = df[FORECAST_COLUMNS]
+        if df.empty:
+            logger.warning(
+                "SQLite database %s contains no forecast rows; generating sample data",
+                self._db_path,
+            )
+            return self._create_sample_data()
+
+        return df
 
     def _resolve_object_keys(self, bucket: str) -> List[str]:
         if settings.cloud_data_key:
@@ -292,7 +303,12 @@ class DataLoader(ForecastRepository):
 
             if by_type["api_ready"]:
                 frames = [pd.read_parquet(path) for path in by_type["api_ready"]]
-                return pd.concat(frames, ignore_index=True)
+                df = pd.concat(frames, ignore_index=True)
+                if not df.empty:
+                    return df
+                logger.warning(
+                    "API-ready parquet files from cloud were empty; falling back to sample data"
+                )
 
             if by_type["raw_preds"] and by_type["raw_hdi"]:
                 hdi_index = {self._raw_key(path): path for path in by_type["raw_hdi"]}
@@ -316,7 +332,12 @@ class DataLoader(ForecastRepository):
                         )
 
                 if prepared_frames:
-                    return pd.concat(prepared_frames, ignore_index=True)
+                    df = pd.concat(prepared_frames, ignore_index=True)
+                    if not df.empty:
+                        return df
+                    logger.warning(
+                        "Prepared raw parquet data contained no rows; falling back to sample data"
+                    )
 
         logger.error(
             "Unable to load usable parquet data from cloud; returning generated sample data"
