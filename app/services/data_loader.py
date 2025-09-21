@@ -11,7 +11,14 @@ from cachetools import TTLCache
 
 from app.core.config import settings
 from app.domain.repositories import ForecastRepository
-from app.models.forecast import ALL_METRIC_NAMES, ForecastMetrics, GridCellForecast, MetricName
+from app.models.forecast import (
+    ALL_METRIC_NAMES,
+    ComparisonOperator,
+    ForecastMetrics,
+    GridCellForecast,
+    MetricConstraint,
+    MetricName,
+)
 from app.services.data_initializer import ensure_local_data_ready
 from app.services.sample_data import generate_sample_forecasts
 
@@ -68,6 +75,7 @@ class ParquetForecastRepository(ForecastRepository):
         grid_ids: Optional[List[int]] = None,
         months: Optional[List[str]] = None,
         metrics: Optional[List[MetricName]] = None,
+        metric_constraints: Optional[List[MetricConstraint]] = None,
     ) -> List[GridCellForecast]:
         df = self._load_data()
 
@@ -79,6 +87,21 @@ class ParquetForecastRepository(ForecastRepository):
 
         if months:
             df = df[df["month"].isin(months)]
+
+        if metric_constraints:
+            for constraint in metric_constraints:
+                column = constraint.metric.value
+                if column not in df.columns:
+                    raise ValueError(f"Metric '{column}' is not available for filtering")
+
+                if constraint.operator is ComparisonOperator.gt:
+                    df = df[df[column] > constraint.value]
+                elif constraint.operator is ComparisonOperator.gte:
+                    df = df[df[column] >= constraint.value]
+                elif constraint.operator is ComparisonOperator.lt:
+                    df = df[df[column] < constraint.value]
+                elif constraint.operator is ComparisonOperator.lte:
+                    df = df[df[column] <= constraint.value]
 
         selected_metrics = [metric.value for metric in metrics] if metrics else ALL_METRIC_NAMES
 

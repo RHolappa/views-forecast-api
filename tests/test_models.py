@@ -1,7 +1,14 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.forecast import ForecastMetrics, ForecastQuery, GridCellForecast, MetricName
+from app.models.forecast import (
+    ComparisonOperator,
+    ForecastMetrics,
+    ForecastQuery,
+    GridCellForecast,
+    MetricConstraint,
+    MetricName,
+)
 
 
 def test_forecast_metrics_validation():
@@ -138,3 +145,30 @@ def test_forecast_query_validation():
     # Duplicate metrics are removed while preserving order
     query = ForecastQuery(metrics=["map", "map", "prob_1"])
     assert query.metrics == ["map", "prob_1"]
+
+
+def test_metric_constraint_parsing():
+    constraint = MetricConstraint.parse("map>50")
+    assert constraint.metric == MetricName.map
+    assert constraint.operator is ComparisonOperator.gt
+    assert constraint.value == 50
+
+    constraint = MetricConstraint.parse("prob_1000<=0.2")
+    assert constraint.metric == MetricName.prob_1000
+    assert constraint.operator is ComparisonOperator.lte
+    assert constraint.value == 0.2
+
+    with pytest.raises(ValueError):
+        MetricConstraint.parse("unknown>1")
+
+    with pytest.raises(ValueError):
+        MetricConstraint.parse("map>>50")
+
+
+def test_forecast_query_metric_filters():
+    query = ForecastQuery(metric_filters=["map>50", "prob_1000<=0.2"])
+    constraints = query.parse_metric_filters()
+
+    assert len(constraints) == 2
+    assert constraints[0].metric == MetricName.map
+    assert constraints[1].operator is ComparisonOperator.lte

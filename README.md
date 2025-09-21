@@ -110,6 +110,14 @@ curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?
 curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2025-09&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
+**Filter by metric thresholds (e.g. MAP > 50):**
+```bash
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&metric_filters=map>50"
+
+# Combine multiple filters
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&metric_filters=map>50&metric_filters=prob_1000>=0.1"
+```
+
 ## Data Storage
 
 The API supports these data storage modes:

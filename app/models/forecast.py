@@ -5,6 +5,7 @@ including forecast metrics, grid cell data, query parameters, and metadata
 structures. All models use Pydantic for validation and serialization.
 """
 
+import re
 from datetime import date
 from enum import Enum
 from typing import List, Optional
@@ -35,6 +36,57 @@ class MetricName(str, Enum):
 
 
 ALL_METRIC_NAMES = tuple(metric.value for metric in MetricName)
+
+
+class ComparisonOperator(str, Enum):
+    """Supported comparison operators for metric filtering."""
+
+    gt = ">"
+    gte = ">="
+    lt = "<"
+    lte = "<="
+
+
+_FILTER_PATTERN = re.compile(
+    r"^(?P<metric>[a-z0-9_]+)\s*(?P<operator>>=|<=|>|<)\s*(?P<value>-?\d+(?:\.\d+)?)$"
+)
+
+
+class MetricConstraint(BaseModel):
+    """Numeric constraint applied to a forecast metric."""
+
+    metric: MetricName
+    operator: ComparisonOperator
+    value: float
+
+    @classmethod
+    def parse(cls, expression: str) -> "MetricConstraint":
+        """Parse a raw metric filter expression (e.g. map>50)."""
+
+        match = _FILTER_PATTERN.match(expression.strip())
+        if not match:
+            raise ValueError(
+                "Metric filters must follow the pattern <metric><operator><value>, "
+                "e.g. map>50 or prob_1000<=0.1"
+            )
+
+        metric_token = match.group("metric")
+        operator_token = match.group("operator")
+        value_token = match.group("value")
+
+        try:
+            metric = MetricName(metric_token)
+        except ValueError as exc:
+            raise ValueError(f"Unknown metric '{metric_token}' in metric filter") from exc
+
+        operator = ComparisonOperator(operator_token)
+
+        try:
+            value = float(value_token)
+        except ValueError as exc:  # pragma: no cover - guarded by regex
+            raise ValueError(f"Invalid numeric value in metric filter: '{value_token}'") from exc
+
+        return cls(metric=metric, operator=operator, value=value)
 
 
 class ForecastMetrics(BaseModel):
@@ -183,6 +235,11 @@ class ForecastQuery(BaseModel):
         examples=[["map", "ci_90_low", "ci_90_high"]],
     )
     format: str = Field("json", description="Response format: json or ndjson")
+    metric_filters: Optional[List[str]] = Field(
+        None,
+        description="Numeric metric filters (e.g. map>50, prob_1000<=0.2)",
+        examples=[["map>50", "prob_1000<=0.2"]],
+    )
 
     @field_validator("country")
     @classmethod
@@ -269,6 +326,14 @@ class ForecastQuery(BaseModel):
             if metric not in unique:
                 unique.append(metric)
         return unique
+
+    def parse_metric_filters(self) -> List[MetricConstraint]:
+        """Parse raw metric filter expressions into structured constraints."""
+
+        if not self.metric_filters:
+            return []
+
+        return [MetricConstraint.parse(expression) for expression in self.metric_filters]
 
 
 class GridCellMetadata(BaseModel):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Protocol
 
-from app.models.forecast import GridCellForecast, MetricName
+from app.models.forecast import GridCellForecast, MetricConstraint, MetricName
 
 
 class ForecastRepository(Protocol):
@@ -21,6 +21,7 @@ class ForecastRepository(Protocol):
         grid_ids: Optional[List[int]] = None,
         months: Optional[List[str]] = None,
         metrics: Optional[List[MetricName]] = None,
+        metric_constraints: Optional[List[MetricConstraint]] = None,
     ) -> List[GridCellForecast]:
         """Return forecasts filtered by the provided criteria."""
 

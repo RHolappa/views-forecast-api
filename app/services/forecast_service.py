@@ -57,11 +57,17 @@ class ForecastService:
                 for metric in query.metrics
             ]
 
+        try:
+            metric_constraints = query.parse_metric_filters()
+        except ValueError as exc:
+            raise ValueError(str(exc)) from exc
+
         forecasts = self.repository.get_forecasts(
             country=query.country,
             grid_ids=query.grid_ids,
             months=months_filter,
             metrics=metrics_filter,
+            metric_constraints=metric_constraints,
         )
 
         logger.info("Retrieved %d forecasts", len(forecasts))

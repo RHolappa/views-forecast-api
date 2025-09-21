@@ -28,6 +28,10 @@ async def get_forecasts(
         None,
         description="Specific metrics to return (defaults to all metrics)",
     ),
+    metric_filters: Optional[List[str]] = Query(
+        None,
+        description="Numeric metric filters (e.g. map>50, prob_1000<=0.1)",
+    ),
     format: str = Query("json", description="Response format: json or ndjson"),
     _: bool = Depends(verify_api_key),
     service: ForecastService = Depends(get_forecast_service),
@@ -42,6 +46,7 @@ async def get_forecasts(
     - **months**: List of specific months (can be repeated: ?months=2024-01&months=2024-02)
     - **month_range**: Range of months (e.g., "2024-01:2024-06")
     - **metrics**: Specific metrics to include (if not specified, returns all 13 metrics)
+    - **metric_filters**: Numeric filters expressed as metric/operator/value (e.g., `map>50`)
     - **format**: Response format ("json" or "ndjson" for streaming)
 
     ## Available Metrics
@@ -68,6 +73,11 @@ async def get_forecasts(
     ```
     GET /api/v1/forecasts?grid_ids=1&grid_ids=2&month_range=2024-01:2024-06&metrics=map&metrics=ci_90_low&metrics=ci_90_high
     ```
+
+    Filter by metric threshold (MAP greater than 50):
+    ```
+    GET /api/v1/forecasts?country=800&metric_filters=map>50
+    ```
     """
     try:
         query = ForecastQuery(
@@ -76,6 +86,7 @@ async def get_forecasts(
             months=months,
             month_range=month_range,
             metrics=metrics,
+            metric_filters=metric_filters,
             format=format,
         )
 
@@ -110,6 +121,10 @@ async def get_forecast_summary(
     grid_ids: Optional[List[int]] = Query(None, description="Filter by grid cell IDs"),
     months: Optional[List[str]] = Query(None, description="Filter by months"),
     month_range: Optional[str] = Query(None, description="Month range"),
+    metric_filters: Optional[List[str]] = Query(
+        None,
+        description="Numeric metric filters (e.g. map>50, prob_1000<=0.1)",
+    ),
     _: bool = Depends(verify_api_key),
     service: ForecastService = Depends(get_forecast_service),
 ):
@@ -125,7 +140,11 @@ async def get_forecast_summary(
     """
     try:
         query = ForecastQuery(
-            country=country, grid_ids=grid_ids, months=months, month_range=month_range
+            country=country,
+            grid_ids=grid_ids,
+            months=months,
+            month_range=month_range,
+            metric_filters=metric_filters,
         )
 
         forecasts = service.get_forecasts(query)
