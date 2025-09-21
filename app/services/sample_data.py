@@ -82,7 +82,7 @@ class SampleConfig:
 
     # Default UN M49 numeric country codes (zero-padded to 3 digits)
     countries: Sequence[str] = ("074", "108", "404", "454", "800", "834")
-    months: Iterable[str] = tuple(pd.period_range("2024-01", periods=6, freq="M").astype(str))
+    months: Iterable[str] = tuple(pd.period_range("2025-08", periods=12, freq="M").astype(str))
     grids_per_country: int = 6
     seed: int = 1337
 

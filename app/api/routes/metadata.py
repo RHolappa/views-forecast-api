@@ -4,9 +4,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.dependencies import verify_api_key
+from app.di import get_forecast_repository
+from app.domain.repositories import ForecastRepository
 from app.models.forecast import GridCellMetadata, MonthMetadata
 from app.models.responses import GridCellsResponse, MonthsResponse
-from app.services.data_loader import data_loader
 
 logger = logging.getLogger(__name__)
 
@@ -14,16 +15,13 @@ router = APIRouter(prefix="/metadata", tags=["metadata"])
 
 
 @router.get("/months", response_model=MonthsResponse)
-async def get_available_months(_: bool = Depends(verify_api_key)):
-    """
-    Get list of available forecast months.
-
-    Returns all months for which forecast data is available,
-    along with the count of forecasts and countries covered
-    for each month.
-    """
+async def get_available_months(
+    _: bool = Depends(verify_api_key),
+    repository: ForecastRepository = Depends(get_forecast_repository),
+):
+    """Get list of available forecast months."""
     try:
-        months_data = data_loader.get_available_months()
+        months_data = repository.get_available_months()
 
         months = [
             MonthMetadata(
@@ -34,8 +32,8 @@ async def get_available_months(_: bool = Depends(verify_api_key)):
 
         return MonthsResponse(data=months, count=len(months))
 
-    except Exception as e:
-        logger.error(f"Error retrieving months: {e}")
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.error("Error retrieving months: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
@@ -45,15 +43,11 @@ async def get_grid_cells(
         None, description="Filter by country code (UN M49 numeric, zero-padded to 3 digits)"
     ),
     _: bool = Depends(verify_api_key),
+    repository: ForecastRepository = Depends(get_forecast_repository),
 ):
-    """
-    Get list of available grid cells.
-
-    Returns all grid cells in the system, optionally filtered by country.
-    Each grid cell includes its ID, coordinates, and administrative boundaries.
-    """
+    """Get list of available grid cells."""
     try:
-        cells_data = data_loader.get_grid_cells(country=country)
+        cells_data = repository.get_grid_cells(country=country)
 
         cells = [
             GridCellMetadata(
@@ -67,31 +61,29 @@ async def get_grid_cells(
             for c in cells_data
         ]
 
-        # Get unique countries
         countries = list({c.country_id for c in cells}) if cells else []
 
         return GridCellsResponse(
             data=cells, count=len(cells), countries=sorted(countries) if not country else None
         )
 
-    except Exception as e:
-        logger.error(f"Error retrieving grid cells: {e}")
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.error("Error retrieving grid cells: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error") from e
 
 
 @router.get("/countries")
-async def get_countries(_: bool = Depends(verify_api_key)):
-    """
-    Get list of available countries.
-
-    Returns all country codes that have forecast data available.
-    """
+async def get_countries(
+    _: bool = Depends(verify_api_key),
+    repository: ForecastRepository = Depends(get_forecast_repository),
+):
+    """Get list of available countries."""
     try:
-        cells_data = data_loader.get_grid_cells()
+        cells_data = repository.get_grid_cells()
         countries = list({c["country_id"] for c in cells_data})
 
         return {"countries": sorted(countries), "count": len(countries)}
 
-    except Exception as e:
-        logger.error(f"Error retrieving countries: {e}")
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.error("Error retrieving countries: %s", e)
         raise HTTPException(status_code=500, detail="Internal server error") from e

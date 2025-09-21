@@ -95,10 +95,10 @@ curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?
 **Query by month or month range:**
 ```bash
 # Single month
-curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01"
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2025-09"
 
 # Month range
-curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&month_range=2024-01:2024-06"
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&month_range=2025-08:2025-12"
 ```
 
 **Choose specific metrics (MAP, confidence intervals, probabilities):**
@@ -107,7 +107,7 @@ curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?
 curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&metrics=map&metrics=ci_50_low&metrics=ci_50_high&metrics=ci_90_low&metrics=ci_90_high&metrics=ci_99_low&metrics=ci_99_high&metrics=prob_100&metrics=prob_1000"
 
 # Just MAP and 90% confidence interval
-curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2024-01&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
+curl -H "X-API-Key: your-local-api-key" "http://localhost:8000/api/v1/forecasts?country=074&months=2025-09&metrics=map&metrics=ci_90_low&metrics=ci_90_high"
 ```
 
 ## Data Storage

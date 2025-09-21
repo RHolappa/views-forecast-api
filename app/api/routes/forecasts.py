@@ -6,9 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import verify_api_key
+from app.di import get_forecast_service
 from app.models.forecast import ForecastQuery, MetricName
 from app.models.responses import ForecastResponse
-from app.services.forecast_service import forecast_service
+from app.services.forecast_service import ForecastService
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ async def get_forecasts(
     ),
     format: str = Query("json", description="Response format: json or ndjson"),
     _: bool = Depends(verify_api_key),
+    service: ForecastService = Depends(get_forecast_service),
 ):
     """
     Retrieve conflict forecasts with optional filtering.
@@ -77,10 +79,10 @@ async def get_forecasts(
             format=format,
         )
 
-        forecasts = forecast_service.get_forecasts(query)
+        forecasts = service.get_forecasts(query)
 
         if format == "ndjson":
-            # Stream as NDJSON for large datasets
+
             def generate():
                 for forecast in forecasts:
                     yield json.dumps(forecast.model_dump()) + "\n"
@@ -91,7 +93,6 @@ async def get_forecasts(
                 headers={"X-Total-Count": str(len(forecasts))},
             )
         else:
-            # Return standard JSON response
             return ForecastResponse(
                 data=forecasts, count=len(forecasts), query=query.model_dump(exclude_none=True)
             )
@@ -110,6 +111,7 @@ async def get_forecast_summary(
     months: Optional[List[str]] = Query(None, description="Filter by months"),
     month_range: Optional[str] = Query(None, description="Month range"),
     _: bool = Depends(verify_api_key),
+    service: ForecastService = Depends(get_forecast_service),
 ):
     """
     Get summary statistics for forecasts matching the query.
@@ -126,8 +128,8 @@ async def get_forecast_summary(
             country=country, grid_ids=grid_ids, months=months, month_range=month_range
         )
 
-        forecasts = forecast_service.get_forecasts(query)
-        summary = forecast_service.get_forecast_summary(forecasts)
+        forecasts = service.get_forecasts(query)
+        summary = service.get_forecast_summary(forecasts)
 
         return summary
 
