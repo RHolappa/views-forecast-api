@@ -1,24 +1,34 @@
-version: '3.8'
+version: '3.9'
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: views-forecast-api:latest
     container_name: views-forecast-api
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
-      - ENVIRONMENT=development
-      - API_HOST=0.0.0.0
-      - API_PORT=8000
-      - USE_LOCAL_DATA=true
-      - DATA_PATH=/app/data/sample
-      - LOG_LEVEL=INFO
+      AUTO_LOAD_DATA: ${AUTO_LOAD_DATA:-1}
+      RESET_DB_ON_START: ${RESET_DB_ON_START:-0}
+      SKIP_DB_IF_EXISTS: ${SKIP_DB_IF_EXISTS:-1}
+      DATA_BACKEND: ${DATA_BACKEND:-database}
+      DATA_PATH: ${DATA_PATH:-/app/data/sample}
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/forecasts.db}
+      USE_LOCAL_DATA: ${USE_LOCAL_DATA:-false}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-2}
+      UVICORN_RELOAD: ${UVICORN_RELOAD:-0}
     volumes:
-      - ./data:/app/data
-      - ./.env:/app/.env:ro
+      - forecasts-data:/app/data
     restart: unless-stopped
     networks:
       - views-network
+
+volumes:
+  forecasts-data:
 
 networks:
   views-network:
