@@ -60,7 +60,7 @@ py -3.11 -m venv .venv
 ### 3. Create a virtual environment
 ```bash
 # macOS / Linux / WSL
-python3.11 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 ```
 ```powershell
