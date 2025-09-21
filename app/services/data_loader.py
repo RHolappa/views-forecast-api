@@ -155,27 +155,27 @@ class DataLoader(ForecastRepository):
             df = pd.concat(frames, ignore_index=True)
             if not df.empty:
                 return df
-            logger.warning("Parquet files contained no rows; falling back to sample data")
+            logger.warning("Parquet files contained no rows; falling back to generated sample data")
         return self._create_sample_data()
 
     def _load_database_data(self) -> pd.DataFrame:
         if not self._db_path:
-            logger.error("Database path is not configured; returning empty DataFrame")
-            return pd.DataFrame(columns=FORECAST_COLUMNS)
+            logger.error("Database path is not configured; falling back to sample data")
+            return self._create_sample_data()
 
         if not self._db_path.exists():
             logger.warning(
                 "SQLite database %s not found. Run `python scripts/load_parquet_to_db.py` or `make db-load` to populate it.",
                 self._db_path,
             )
-            return pd.DataFrame(columns=FORECAST_COLUMNS)
+            return self._create_sample_data()
 
         try:
             with sqlite3.connect(self._db_path) as conn:
                 df = pd.read_sql_query("SELECT * FROM forecasts", conn)
         except sqlite3.OperationalError as exc:
             logger.error("Failed to read forecasts table from %s: %s", self._db_path, exc)
-            return pd.DataFrame(columns=FORECAST_COLUMNS)
+            return self._create_sample_data()
 
         missing_columns = [col for col in FORECAST_COLUMNS if col not in df.columns]
         if missing_columns:
@@ -184,12 +184,12 @@ class DataLoader(ForecastRepository):
                 self._db_path,
                 ", ".join(missing_columns),
             )
-            return pd.DataFrame(columns=FORECAST_COLUMNS)
+            return self._create_sample_data()
 
         df = df[FORECAST_COLUMNS]
         if df.empty:
             logger.warning(
-                "SQLite database %s contains no forecast rows; generating sample data",
+                "SQLite database %s contains no forecast rows; falling back to sample data",
                 self._db_path,
             )
             return self._create_sample_data()
