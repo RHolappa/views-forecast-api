@@ -3,7 +3,7 @@ import pytest
 
 from app.core.config import settings
 from app.models.forecast import ForecastQuery, MetricName
-from app.services.data_loader import ParquetForecastRepository
+from app.services.data_loader import DataLoader
 from app.services.forecast_service import ForecastService
 from app.services.sample_data import FORECAST_COLUMNS
 
@@ -84,7 +84,7 @@ def repository(tmp_path, monkeypatch):
     parquet_path = tmp_path / "forecasts.parquet"
     df.to_parquet(parquet_path, index=False)
 
-    return ParquetForecastRepository(data_path=str(tmp_path))
+    return DataLoader(data_path=str(tmp_path), backend="parquet")
 
 
 @pytest.fixture()
@@ -154,7 +154,7 @@ def test_repository_generates_sample_data(monkeypatch, tmp_path):
     """Repository should generate sample data when none exists."""
     monkeypatch.setattr(settings, "data_path", str(tmp_path), raising=False)
 
-    repository = ParquetForecastRepository()
+    repository = DataLoader(data_path=str(tmp_path), backend="parquet")
     forecasts = repository.get_forecasts()
 
     assert forecasts, "Sample data should provide forecast rows"

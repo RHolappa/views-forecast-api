@@ -18,7 +18,9 @@ def test_global_exception_handler():
         payload = response.json()
         assert payload["error"] == "Internal server error"
     finally:
-        app.router.routes = [route for route in app.router.routes if getattr(route, "path", None) != "/boom"]
+        app.router.routes = [
+            route for route in app.router.routes if getattr(route, "path", None) != "/boom"
+        ]
 
 
 def test_lifespan_logs(caplog):
