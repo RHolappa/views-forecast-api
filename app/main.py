@@ -13,12 +13,30 @@ from app.models.responses import HealthResponse
 logger = logging.getLogger(__name__)
 
 
+def log_startup_banner() -> None:
+    """Emit a simple ASCII banner announcing the service startup."""
+
+    banner = (
+        "\n"
+        "RRRRR  AAAA   U   U  H   H  AAAA    ..    AAAA  PPPP   IIIII\n"
+        "R   R A    A  U   U  H   H A    A  .. .. A    A P   P    I  \n"
+        "RRRRR AAAAAA  U   U  HHHHH AAAAAA  .. .. AAAAAA PPPP     I  \n"
+        "R  R  A    A  U   U  H   H A    A    ..  A    A P        I  \n"
+        "R   R A    A   UUU   H   H A    A    ..  A    A P      IIIII\n"
+        "\n"
+        f"   rauha.api v{APP_VERSION} starting up\n"
+        f"   Environment : {settings.environment}\n"
+        f"   Data backend: {settings.data_backend}\n"
+        f"   API prefix  : {settings.api_v1_prefix}\n"
+    )
+    logger.info("%s", banner)
+    logger.info("Starting %s v%s", APP_NAME, APP_VERSION)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle application startup and shutdown"""
-    logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
-    logger.info(f"Environment: {settings.environment}")
-    logger.info(f"Using data backend: {settings.data_backend}")
+    log_startup_banner()
 
     yield
 
