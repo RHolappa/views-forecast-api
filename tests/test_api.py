@@ -173,3 +173,9 @@ def test_invalid_metrics():
     """Test validation of invalid metrics"""
     response = client.get("/api/v1/forecasts?metrics=invalid_metric")
     assert response.status_code == 422
+
+
+def test_invalid_metric_filter():
+    """Metric filter expressions should be validated."""
+    response = client.get("/api/v1/forecasts?metric_filters=map>>50")
+    assert response.status_code == 400

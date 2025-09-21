@@ -5,13 +5,22 @@ meta {
 }
 
 get {
-  url: http://localhost:8000/api/v1/forecasts?country=074
+  url: http://localhost:8000/api/v1/forecasts?country=074&metrics=map&metrics=ci_50_low&metrics=ci_50_high&metrics=ci_90_low&metrics=ci_90_high&metrics=ci_99_low&metrics=ci_99_high&metrics=prob_100&metrics=prob_1000
   body: none
   auth: apikey
 }
 
 params:query {
   country: 074
+  metrics: map
+  metrics: ci_50_low
+  metrics: ci_50_high
+  metrics: ci_90_low
+  metrics: ci_90_high
+  metrics: ci_99_low
+  metrics: ci_99_high
+  metrics: prob_100
+  metrics: prob_1000
 }
 
 auth:apikey {
