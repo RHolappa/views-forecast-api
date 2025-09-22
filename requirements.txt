@@ -10,7 +10,7 @@ pandera==0.20.3
 python-multipart==0.0.20
 orjson==3.10.12
 cachetools==6.2.0
-python-dotenv==1.0.1
+python-dotenv==1.1.1
 pytest==8.3.4
 pytest-asyncio==0.25.2
 pytest-cov==7.0.0
